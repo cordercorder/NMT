@@ -185,7 +185,7 @@ class Vocab:
     def __repr__(self):
 
         """
-        :return: randomly return 10 tokens if the number of tokens in self.__token_count if larger than 10,
+        :return: randomly return 10 tokens if the number of tokens in self.__token_count is larger than 10,
                  else return all tokens
         """
 
