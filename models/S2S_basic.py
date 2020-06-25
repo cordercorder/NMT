@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 class Encoder(nn.Module):
@@ -41,26 +42,20 @@ class Encoder(nn.Module):
         else:
             self.rnn = nn.LSTM(embedding_size, hidden_size, num_layers, dropout=dropout_, bidirectional=bidirectional_)
 
-    def forward(self, input_batch, input_length, padding_value_):
+    def forward(self, input_batch):
 
         """
         :param input_batch: the shape of input_batch is (input_length, batch_size). type: Tensor
-        :param input_length: length of sequence in the batch. type: list or Tensor
-        :param padding_value_: value for padded element. type: float
         """
 
         # input_batch: (input_length, batch_size, embedding_size)
         input_batch = self.embedding(input_batch)
-
-        input_batch = nn.utils.rnn.pack_padded_sequence(input_batch, input_length, enforce_sorted=False)
 
         # output: (input_length, batch_size, num_directions * hidden_size)
         # hidden_state is hn or (hn, cn)
         # hn: (num_layers * num_directions, batch_size, hidden_size)
         # cn: (num_layers * num_directions, batch_size, hidden_size)
         output, hidden_state = self.rnn(input_batch)
-
-        output, _ = nn.utils.rnn.pad_packed_sequence(output, padding_value=padding_value_)
 
         return output, hidden_state
 
@@ -121,17 +116,15 @@ class Decoder(nn.Module):
         # output: (1, batch_size, vocab_size)
         output = self.fc(output)
 
-        # output: (1, batch_size, vocab_size)
-        pred = torch.nn.functional.log_softmax(output, dim=2)
+        return output, hidden_state
 
-        return pred, hidden_state
-
-    def forward(self, input_batch, encoder_hidden_state=None, teacher_forcing_ratio=0):
+    def forward(self, input_batch, target_batch, encoder_hidden_state, use_teacher_forcing):
         """
         :param input_batch: the shape of input_batch is (input_length, batch_size). type: Tensor
+        :param target_batch: the shape of target_batch is (input_length, batch_size). type: Tensor
         :param encoder_hidden_state: the shape of encoder_hidden_state is (num_layers, batch_size,hidden_size).
                                      type: Tensor
-        :param teacher_forcing_ratio: probability of using teacher forcing
+        :param use_teacher_forcing: whether use teacher forcing or not. type: bool
         """
 
         decoder_hidden_state = encoder_hidden_state
@@ -139,11 +132,49 @@ class Decoder(nn.Module):
         # decoder_input: (1, batch_size)
         decoder_input = input_batch[0].view(1, -1)
 
-        for i in range(1, input_batch.size(0)):
+        # decoder_output_list: (input_length-1, batch_size, vocab_size)
+        decoder_batch_output = torch.zeros(size=(target_batch.size(0)-1, target_batch.size(1), self.vocab_size),
+                                           device=input_batch.device)
 
-            decoder_input = input_batch[i]
+        for i in range(1, target_batch.size(0)-1):
+            # target_batch[i]: (batch_size, )
+            decoder_output, decoder_hidden_state = self.decode_batch(decoder_input, decoder_hidden_state)
+
+            if use_teacher_forcing:
+                decoder_input = target_batch[i].view(1, -1)
+            else:
+                # pred_tensor: (1, batch_size, 1)
+                # pred_index: (1, batch_size, 1)
+                pred_tensor, pred_index = decoder_output.topk(1, dim=2)
+                decoder_input = torch.squeeze(pred_index, 2)
+
+            decoder_batch_output[i - 1] = decoder_output[0]
+
+        return decoder_batch_output
 
 
+class S2S(nn.Module):
 
+    def __init__(self, encoder, decoder):
 
+        """
+        :param encoder: Encoder
+        :param decoder: Decoder
+        """
 
+        super(S2S, self).__init__()
+        self.encoder = encoder
+        self.decoder = decoder
+
+    def forward(self, input_batch, target_batch, use_teacher_forcing):
+        """
+        :param input_batch: the shape of input_batch is (input_length, batch_size). type: Tensor
+        :param target_batch: the shape of target_batch is (input_length, batch_size). type: Tensor
+        :param use_teacher_forcing: whether use teacher forcing or not. type: bool
+        :return: output of decoder, shape: (input_length, batch_size, vocab_size). type: Tensor
+        """
+        encoder_output, encoder_hidden_state = self.encoder(input_batch)
+
+        decoder_output = self.decoder(input_batch, target_batch, encoder_hidden_state, use_teacher_forcing)
+
+        return decoder_output
