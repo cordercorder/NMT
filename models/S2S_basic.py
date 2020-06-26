@@ -1,11 +1,10 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 
 class Encoder(nn.Module):
 
-    def __init__(self, rnn_type, vocab_size, embedding_size, hidden_size, num_layers, dropout_=0, bidirectional_=False):
+    def __init__(self, rnn_type, vocab_size, embedding_size, hidden_size, num_layers, dropout_=0, bidirectional_=True):
 
         """
         :param rnn_type: type of rnn. supporting (RNN, LSTM, GRU). type: str
@@ -15,7 +14,7 @@ class Encoder(nn.Module):
         :param num_layers: number of rnn layers. type: int
         :param dropout_: if non-zero, introduces a Dropout layer on the outputs of each RNN layer except the last layer,
                          with dropout probability equal to dropout. Default: 0. type: float
-        :param bidirectional_: if True, becomes a bidirectional RNN. Default: False. type: bool
+        :param bidirectional_: if True, becomes a bidirectional RNN. Default: True. type: bool
         """
 
         super(Encoder, self).__init__()
@@ -132,8 +131,8 @@ class Decoder(nn.Module):
         # decoder_input: (1, batch_size)
         decoder_input = input_batch[0].view(1, -1)
 
-        # decoder_output_list: (input_length-1, batch_size, vocab_size)
-        decoder_batch_output = torch.zeros(size=(target_batch.size(0)-1, target_batch.size(1), self.vocab_size),
+        # decoder_output_list: (input_length, batch_size, vocab_size)
+        decoder_batch_output = torch.zeros(size=(target_batch.size(0), target_batch.size(1), self.vocab_size),
                                            device=input_batch.device)
 
         for i in range(1, target_batch.size(0)-1):
@@ -148,7 +147,7 @@ class Decoder(nn.Module):
                 pred_tensor, pred_index = decoder_output.topk(1, dim=2)
                 decoder_input = torch.squeeze(pred_index, 2)
 
-            decoder_batch_output[i - 1] = decoder_output[0]
+            decoder_batch_output[i] = decoder_output[0]
 
         return decoder_batch_output
 
@@ -173,8 +172,18 @@ class S2S(nn.Module):
         :param use_teacher_forcing: whether use teacher forcing or not. type: bool
         :return: output of decoder, shape: (input_length, batch_size, vocab_size). type: Tensor
         """
+
+        # encoder_output: (input_length, batch_size, num_directions * hidden_size)
+        # encoder_hidden_state: (num_layers * num_directions, batch_size, hidden_size)
         encoder_output, encoder_hidden_state = self.encoder(input_batch)
 
+        if self.encoder.bidirectional_:
+            # encoder_hidden_state: (num_layers, 2, batch_size, hidden_size)
+            encoder_hidden_state = encoder_hidden_state.view(-1, 2, encoder_hidden_state.size(1),
+                                                             encoder_hidden_state.size(2))
+            # encoder_hidden_state: (num_layers, 2, batch_size, 2 * hidden_size)
+            encoder_hidden_state = torch.cat([encoder_hidden_state[:, 0, :, :], encoder_hidden_state[:, 1, :, :]],
+                                             dim=2)
         decoder_output = self.decoder(input_batch, target_batch, encoder_hidden_state, use_teacher_forcing)
 
         return decoder_output

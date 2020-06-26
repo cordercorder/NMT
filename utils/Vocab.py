@@ -75,20 +75,23 @@ class Vocab:
             self.__token2index[token] = num
             self.__index2token[num] = token
 
-    def add_sentence(self, sentence):
+    def add_sentence(self, sentence, normalize=True):
 
         """
         :param sentence: sentence to be added. type: str
+        :param normalize: whether normalize the sentence or not, default True. type: bool
         :return: None
         """
-        sentence = normalizeString(sentence)
+        if normalize:
+            sentence = normalizeString(sentence)
         for token in sentence.split():
             self.addtoken(token)
 
-    def add_corpus(self, corpus_path):
+    def add_corpus(self, corpus_path, normalize=True):
 
         """
         :param corpus_path: location of corpus. type: str
+        :param normalize: whether normalize sentence in the corpus or not, default True. type: bool
         :return: None
         """
 
@@ -96,7 +99,7 @@ class Vocab:
             data = f.read().split("\n")
 
             for line in data:
-                self.add_sentence(line)
+                self.add_sentence(line, normalize=normalize)
 
     def add_unk(self, unk="UNK"):
 

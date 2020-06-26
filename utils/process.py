@@ -42,6 +42,11 @@ def normalizeString(s, remove_punctuation=False):
     return s
 
 
+def sort_sentence_by_length(data):
+
+    return data.sort(key=lambda item: len(item))
+
+
 if __name__ == "__main__":
 
     print(unicodeToAscii("Ślusàrski  "))
