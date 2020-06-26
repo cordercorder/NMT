@@ -50,7 +50,7 @@ def batch_data(src_data, tgt_data, train_order, batch_size, padding_value, devic
         tmp_src_data = src_data[order:order+batch_size]
         tmp_tgt_data = tgt_data[order:order+batch_size]
 
-        yield pad_data(tmp_src_data, padding_value, device), padding_value(tmp_tgt_data, padding_value, device)
+        yield pad_data(tmp_src_data, padding_value, device), pad_data(tmp_tgt_data, padding_value, device)
 
 
 if __name__ == "__main__":

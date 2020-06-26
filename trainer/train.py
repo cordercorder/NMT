@@ -19,6 +19,7 @@ parser.add_argument("--rnn_type", required=True)
 parser.add_argument("--embedding_size", required=True, type=int)
 parser.add_argument("--hidden_size", required=True, type=int)
 parser.add_argument("--num_layers", required=True, type=int)
+parser.add_argument("--checkpoint", required=True)
 
 parser.add_argument("--epoch", default=10)
 parser.add_argument("--learning_rate", default=0.001, type=float)
@@ -29,6 +30,7 @@ parser.add_argument("--start_token", default="<s>")
 parser.add_argument("--end_token", default="<e>")
 parser.add_argument("--unk", default="UNK")
 parser.add_argument("--threshold", default=0, type=int)
+parser.add_argument("--save_model_steps", default=0.1, type=float)
 
 args, unknown = parser.parse_known_args()
 
@@ -61,6 +63,8 @@ padding_value = src_vocab.get_index(args.end_token)
 
 assert padding_value == tgt_vocab.get_index(args.end_token)
 
+STEPS = len(train_order)
+
 for i in range(args.epoch):
 
     random.shuffle(train_order)
@@ -69,6 +73,8 @@ for i in range(args.epoch):
 
     start_time = time.time()
 
+    steps = 0
+
     for input_batch, target_batch in batch_data(src_data, tgt_data, train_order, args.batch_size,
                                                 padding_value, device):
 
@@ -76,10 +82,9 @@ for i in range(args.epoch):
         # target_batch: (input_length, batch_size)
         output = s2s(input_batch, target_batch, True)
 
-        step_loss = 0.0
+        batch_loss = 0.0
 
-        for j in range(1, target_batch.size(0)-1):
-
+        for j in range(1, target_batch.size(0) - 1):
             # tmp_input_batch: (batch_size, vocab_size)
             # tmp_target_batch: (batch_size, )
             tmp_input_batch = output[j]
@@ -90,12 +95,17 @@ for i in range(args.epoch):
 
             tmp_loss *= mask
 
-            step_loss += torch.sum(tmp_loss)
+            batch_loss += torch.sum(tmp_loss)
 
-        epoch_loss += step_loss.item()
+        epoch_loss += batch_loss.item()
 
         optimizer.zero_grad()
-        step_loss.backward()
+        batch_loss.backward()
         optimizer.step()
+        steps += 1
 
-    print("Epoch: {}, time: {} seconds, loss: {}".format(i, time.time() - start_time, step_loss.item()))
+        if steps == max(int(STEPS * args.save_model_steps), 1):
+            torch.save({"epoch": i, "step": steps, "batch_loss": batch_loss.item(),
+                        "model_state": s2s.state_dict()}, args.checkpoint + "_" +
+                       str(i) + "_" + str(steps) + "_" + str(batch_loss.item()))
+    print("Epoch: {}, time: {} seconds, loss: {}".format(i, time.time() - start_time, epoch_loss))
