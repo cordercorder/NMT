@@ -105,9 +105,9 @@ for i in range(args.epoch):
         steps += 1
 
         if steps == max(int(STEPS * args.save_model_steps), 1):
-            torch.save({"epoch": i, "step": steps, "model_state": s2s.state_dict()}, args.checkpoint + "_" +
+            torch.save({"epoch": i, "step": steps, "model": s2s}, args.checkpoint + "_" +
                        str(i) + "_" + str(steps))
 
-    torch.save({"epoch": i, "epoch_loss": epoch_loss, "model_state": s2s.state_dict()}, args.checkpoint +
+    torch.save({"epoch": i, "epoch_loss": epoch_loss, "model": s2s}, args.checkpoint +
                "__{}_{:.6f}".format(i, epoch_loss))
     print("Epoch: {}, time: {} seconds, loss: {}".format(i, time.time() - start_time, epoch_loss))

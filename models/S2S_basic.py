@@ -144,8 +144,11 @@ class Decoder(nn.Module):
             else:
                 # pred_tensor: (1, batch_size, 1)
                 # pred_index: (1, batch_size, 1)
-                pred_tensor, pred_index = decoder_output.topk(1, dim=2)
-                decoder_input = torch.squeeze(pred_index, 2)
+                # pred_tensor, pred_index = decoder_output.topk(1, dim=2)
+                # decoder_input = torch.squeeze(pred_index, 2)
+
+                pred_index = torch.argmax(decoder_output, dim=2)
+                decoder_input = pred_index
 
             decoder_batch_output[i] = decoder_output[0]
 
