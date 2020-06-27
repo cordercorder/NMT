@@ -4,6 +4,7 @@ import torch.nn.functional as F
 import argparse
 from utils.Vocab import Vocab
 from utils.process import normalizeString
+from nltk.translate.bleu_score import corpus_bleu
 
 parser = argparse.ArgumentParser()
 
@@ -13,6 +14,7 @@ parser.add_argument("--test_src_path", required=True)
 parser.add_argument("--test_tgt_path", required=True)
 parser.add_argument("--test_src_vocab_path", required=True)
 parser.add_argument("--test_tgt_vocab_path", required=True)
+parser.add_argument("--translation_output", required=True)
 
 parser.add_argument("--beam_size", default=1, type=int)
 
@@ -22,7 +24,6 @@ device = args.device
 
 s2s = (torch.load(args.load)["model"]).to(device)
 
-
 src_vocab = Vocab.load(args.test_src_vocab_path)
 tgt_vocab = Vocab.load(args.test_tgt_vocab_path)
 
@@ -30,14 +31,12 @@ src_data = []
 pred_data = []
 
 with open(args.test_tgt_path) as f:
-
     data = f.read().split("\n")
     tgt_data = [normalizeString(line) for line in data]
 
 max_tgt_length = max(len(line.split()) for line in tgt_data)
 
 with torch.no_grad():
-
     s2s.eval()
 
     with open(args.test_src_path) as f:
@@ -98,7 +97,7 @@ with torch.no_grad():
 
             pred_token_index = pred_token_index.view(args.beam_size)
 
-            pred_token = tgt_vocab.get_token(pred_token_index[0])
+            pred_token = tgt_vocab.get_token(pred_token_index[0].item())
 
             pred_line.append(pred_token)
 
@@ -109,5 +108,16 @@ with torch.no_grad():
 
         pred_data.append(pred_line)
 
-print(pred_data)
-print(tgt_data)
+with open(args.translation_output, "w") as f:
+    for tgt, pred in zip(tgt_data, pred_data):
+        pred = " ".join(pred)
+        f.write(tgt + "\n")
+        f.write(pred + "\n")
+        f.write("\n")
+
+    bleu_value = corpus_bleu([[line.split()] for line in tgt_data], pred_data)
+    f.write(str(bleu_value))
+
+print(pred_data[-10:])
+print(tgt_data[-10:])
+print(bleu_value)

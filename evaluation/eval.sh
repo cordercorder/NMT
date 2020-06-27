@@ -1,7 +1,8 @@
 python -m evaluation.eval \
-    --device cpu \
-    --load /cordercorder/NMT/data/model__9_9.204300 \
-    --test_src_path /cordercorder/NMT/data/src.en \
-    --test_tgt_path /cordercorder/NMT/data/tgt.en \
-    --test_src_vocab_path /cordercorder/NMT/data/src.en.vocab \
-    --test_tgt_vocab_path /cordercorder/NMT/data/tgt.en.vocab
+    --device cuda:2 \
+    --load /data/rrjin/NMT/data/model__9_252493.382682 \
+    --test_src_path /data/rrjin/NMT/data/test_src.spa \
+    --test_tgt_path /data/rrjin/NMT/data/test_tgt.en \
+    --test_src_vocab_path /data/rrjin/NMT/data/src.spa.vocab \
+    --test_tgt_vocab_path /data/rrjin/NMT/data/tgt.en.vocab \
+    --translation_output /data/rrjin/NMT/data/translations.txt

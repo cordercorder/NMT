@@ -37,28 +37,20 @@ class Vocab:
         :param token: token to be encoded. type: str
         :return: unique id of the token. type: int
         """
-        return self.__token2index.get(token, self.token_not_found())
+        if token not in self.__token2index:
+            raise Exception("Token not found")
+
+        return self.__token2index.get(token)
 
     def get_token(self, index):
         """
-        A memory optimization method. If self.__index2token[token] is directly called, an item
-        will insert to index2token, but self.__index2token.get(token) will not
         :param index: unique id of the token. type: int
         :return: the token which id is equal to index. type: str
         """
-        return self.__index2token.get(index, self.index_not_found())
-
-    def token_not_found(self):
-        if self.unk_token_index is None:
-            raise Exception("Token not found")
-        else:
-            return self.unk_token_index
-
-    def index_not_found(self):
-        if self.unk_token is None:
+        if index not in self.__index2token:
             raise Exception("Index not found")
-        else:
-            return self.unk_token
+
+        return self.__index2token.get(index)
 
     def addtoken(self, token):
 
