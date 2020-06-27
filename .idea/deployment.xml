@@ -1,18 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" autoUpload="Always" serverName="root@39.97.116.129:22">
+  <component name="PublishConfigData" autoUpload="Always">
     <serverData>
       <paths name="aliyun">
         <serverdata>
           <mappings>
             <mapping deploy="/cordercorder/NMT" local="$PROJECT_DIR$" web="/" />
-          </mappings>
-        </serverdata>
-      </paths>
-      <paths name="root@39.97.116.129:22">
-        <serverdata>
-          <mappings>
-            <mapping deploy="/cordercorder/NMT" local="$PROJECT_DIR$" />
           </mappings>
         </serverdata>
       </paths>

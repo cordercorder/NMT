@@ -89,7 +89,7 @@ for i in range(args.epoch):
             # tmp_target_batch: (batch_size, )
             tmp_input_batch = output[j]
             tmp_target_batch = target_batch[j]
-            mask = torch.logical_not(tmp_target_batch == padding_value)
+            mask = torch.ne(tmp_target_batch, padding_value).float()
             # tmp_loss: (batch_size, )
             tmp_loss = criterion(tmp_input_batch, tmp_target_batch)
 

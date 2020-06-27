@@ -1,14 +1,14 @@
 python -m trainer.train \
-    --device cpu \
-    --src_language en \
+    --device cuda:2 \
+    --src_language spa \
     --tgt_language en \
-    --src_path /cordercorder/NMT/data/src.en \
-    --tgt_path /cordercorder/NMT/data/tgt.en \
-    --src_vocab_path /cordercorder/NMT/data/src.en.vocab \
-    --tgt_vocab_path /cordercorder/NMT/data/tgt.en.vocab \
+    --src_path /data/rrjin/NMT/data/src.spa \
+    --tgt_path /data/rrjin/NMT/data/tgt.en \
+    --src_vocab_path /data/rrjin/NMT/data/src.spa.vocab \
+    --tgt_vocab_path /data/rrjin/NMT/data/tgt.en.vocab \
     --rnn_type lstm \
-    --embedding_size 128 \
-    --hidden_size 128 \
+    --embedding_size 512 \
+    --hidden_size 512 \
     --num_layers 3 \
-    --checkpoint /cordercorder/NMT/data/model \
-    --batch_size 1
+    --checkpoint /data/rrjin/NMT/data/model \
+    --batch_size 32
