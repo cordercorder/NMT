@@ -5,6 +5,7 @@ from models import S2S_basic
 from utils.data_loader import load_corpus_data, batch_data
 import random
 import time
+import math
 
 parser = argparse.ArgumentParser()
 
@@ -25,12 +26,13 @@ parser.add_argument("--epoch", default=10)
 parser.add_argument("--learning_rate", default=0.001, type=float)
 parser.add_argument("--batch_size", default=32, type=int)
 parser.add_argument("--bidirectional", default=True, type=bool)
-parser.add_argument("--dropout", default=0, type=int)
+parser.add_argument("--dropout", default=0, type=float)
 parser.add_argument("--start_token", default="<s>")
 parser.add_argument("--end_token", default="<e>")
 parser.add_argument("--unk", default="UNK")
 parser.add_argument("--threshold", default=0, type=int)
 parser.add_argument("--save_model_steps", default=0.1, type=float)
+parser.add_argument("--teacher_forcing_ratio", default=0.5, type=float)
 
 args, unknown = parser.parse_known_args()
 
@@ -75,12 +77,16 @@ for i in range(args.epoch):
 
     steps = 0
 
+    word_count = 0
+
     for input_batch, target_batch in batch_data(src_data, tgt_data, train_order, args.batch_size,
                                                 padding_value, device):
+        
+        use_teacher_forcing = True if random.random() >= args.teacher_forcing_ratio else False
 
         # output: (input_length, batch_size, vocab_size)
         # target_batch: (input_length, batch_size)
-        output = s2s(input_batch, target_batch, True)
+        output = s2s(input_batch, target_batch, use_teacher_forcing)
 
         batch_loss = 0.0
 
@@ -104,10 +110,20 @@ for i in range(args.epoch):
         optimizer.step()
         steps += 1
 
-        if steps == max(int(STEPS * args.save_model_steps), 1):
-            torch.save({"epoch": i, "step": steps, "model": s2s}, args.checkpoint + "_" +
-                       str(i) + "_" + str(steps))
+        batch_word_count = sum(len(target_sent) for target_sent in target_batch)
 
-    torch.save({"epoch": i, "epoch_loss": epoch_loss, "model": s2s}, args.checkpoint +
-               "__{}_{:.6f}".format(i, epoch_loss))
+        word_count += batch_word_count
+
+        if steps == max(int(STEPS * args.save_model_steps), 1):
+            
+            torch.save(s2s, args.checkpoint + "_" + str(i) + "_" + str(steps))
+            batch_loss_value = batch_loss.item()
+            ppl = math.exp(batch_loss_value / batch_word_count)
+
+            print("Loss: {}, perplexity: {}, time: {} seconds".format(batch_loss_value, ppl, time.time() - start_time))
+
+
+    epoch_loss /= word_count
+
+    torch.save(s2s, args.checkpoint + "__{}_{:.6f}".format(i, epoch_loss))
     print("Epoch: {}, time: {} seconds, loss: {}".format(i, time.time() - start_time, epoch_loss))

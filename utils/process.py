@@ -15,27 +15,31 @@ def unicodeToAscii(s):
     )
 
 
-def normalizeString(s, remove_punctuation=False):
+def normalizeString(s, remove_punctuation=False, to_ascii=True):
 
     """
     :param s: string to be processed. type: str
     :param remove_punctuation: if True, remove all punctuation in the string, default False. type: bool
+    :param to_ascii: convert the character in s to ascii character, default True. type: bool
     :return: string after processed
     """
+    s = s.lower().strip()
 
-    s = unicodeToAscii(s.lower().strip())
+    if to_ascii:
+        s = unicodeToAscii(s)
 
     # add a space between normal character and punctuation
-    s = re.sub(r"([.!?,¿，。；‘\"？，“！])", r" \1 ", s)
-
-    # change multiple spaces into one space
-    s = re.sub(r"[ ]+", " ", s)
+    s = re.sub(r"([.!?,¿，。；'‘\"？，“！])", r" \1 ", s)
 
     if remove_punctuation:
         # remove punctuation
-        s = re.sub(r"[^a-zA-Z]+", r" ", s)
-    else:
-        s = re.sub(r"[^a-zA-Z.!?,¿，。；‘\"？，“！]+", r" ", s)
+        s = re.sub(r"[.!?,¿，。；'‘\"？，“！]+", r" ", s)
+    
+    s = "".join(c for c in s if c != "@")
+
+
+    # change multiple spaces into one space
+    s = re.sub(r"[ ]+", " ", s)
 
     s = s.strip()
 

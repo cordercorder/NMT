@@ -14,7 +14,7 @@ def load_corpus_data(data_path, language_name, start_token, end_token, vocab_pat
         data = f.read().split("\n")
 
         for line in data:
-            line = " ".join([start_token, normalizeString(line), end_token])
+            line = " ".join([start_token, normalizeString(line, to_ascii=False), end_token])
             v.add_sentence(line, normalize=False)
             corpus.append(line)
 
