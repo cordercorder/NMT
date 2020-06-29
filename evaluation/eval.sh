@@ -1,6 +1,6 @@
 python -m evaluation.eval \
-    --device cuda:2 \
-    --load /data/rrjin/NMT/tmpdata/models__4_0.611085 \
+    --device cuda:1 \
+    --load /data/rrjin/NMT/tmpdata/models__9_0.352974 \
     --test_src_path /data/rrjin/NMT/tmpdata/test_src.spa \
     --test_tgt_path /data/rrjin/NMT/tmpdata/test_tgt.en \
     --test_src_vocab_path /data/rrjin/NMT/tmpdata/src.spa.vocab \
