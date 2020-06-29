@@ -1,4 +1,4 @@
-python -m trainer.train \
+python -u -m trainer.train \
     --device cuda:2 \
     --src_language combine \
     --tgt_language en \

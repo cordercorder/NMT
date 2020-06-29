@@ -2,7 +2,8 @@ import argparse
 import torch
 import torch.nn as nn
 from models import S2S_basic
-from utils.data_loader import load_corpus_data, batch_data
+from utils.data_loader import load_corpus_data, NMTDataset, collate
+from torch.utils.data import DataLoader
 import random
 import time
 import math
@@ -31,7 +32,7 @@ parser.add_argument("--start_token", default="<s>")
 parser.add_argument("--end_token", default="<e>")
 parser.add_argument("--unk", default="UNK")
 parser.add_argument("--threshold", default=0, type=int)
-parser.add_argument("--save_model_steps", default=0.1, type=float)
+parser.add_argument("--save_model_steps", default=0.3, type=float)
 parser.add_argument("--teacher_forcing_ratio", default=0.5, type=float)
 
 args, unknown = parser.parse_known_args()
@@ -45,8 +46,6 @@ tgt_data, tgt_vocab = load_corpus_data(args.tgt_path, args.tgt_language, args.st
                                        args.tgt_vocab_path, args.unk, args.threshold)
 
 assert len(src_data) == len(tgt_data)
-
-train_order = list(range(0, len(src_data), args.batch_size))
 
 encoder = S2S_basic.Encoder(args.rnn_type, len(src_vocab), args.embedding_size, args.hidden_size, args.num_layers,
                             args.dropout, args.bidirectional)
@@ -65,11 +64,13 @@ padding_value = src_vocab.get_index(args.end_token)
 
 assert padding_value == tgt_vocab.get_index(args.end_token)
 
-STEPS = len(train_order)
+train_data = NMTDataset(src_data, tgt_data)
+train_loader = DataLoader(train_data, args.batch_size, shuffle=True, collate_fn=lambda batch: collate(batch, padding_value, device))
+
+STEPS = len(range(0, len(src_data), args.batch_size))
+save_model_steps = max(int(STEPS * args.save_model_steps), 1)
 
 for i in range(args.epoch):
-
-    random.shuffle(train_order)
 
     epoch_loss = 0.0
 
@@ -79,25 +80,24 @@ for i in range(args.epoch):
 
     word_count = 0
 
-    for input_batch, target_batch in batch_data(src_data, tgt_data, train_order, args.batch_size,
-                                                padding_value, device):
-        
-        use_teacher_forcing = True if random.random() >= args.teacher_forcing_ratio else False
+    use_teacher_forcing_list = [True if random.random() >= args.teacher_forcing_ratio else False for j in range(STEPS)]
+
+    for j, (input_batch, target_batch) in enumerate(train_loader):
 
         # output: (input_length, batch_size, vocab_size)
         # target_batch: (input_length, batch_size)
-        output = s2s(input_batch, target_batch, use_teacher_forcing)
+        output = s2s(input_batch, target_batch, use_teacher_forcing_list[j])
 
         batch_loss = 0.0
 
         for j in range(1, target_batch.size(0) - 1):
             # tmp_input_batch: (batch_size, vocab_size)
             # tmp_target_batch: (batch_size, )
-            tmp_input_batch = output[j]
+            tmp_output_batch = output[j]
             tmp_target_batch = target_batch[j]
             mask = torch.ne(tmp_target_batch, padding_value).float()
             # tmp_loss: (batch_size, )
-            tmp_loss = criterion(tmp_input_batch, tmp_target_batch)
+            tmp_loss = criterion(tmp_output_batch, tmp_target_batch)
 
             tmp_loss *= mask
 
@@ -114,13 +114,12 @@ for i in range(args.epoch):
 
         word_count += batch_word_count
 
-        if steps == max(int(STEPS * args.save_model_steps), 1):
+        if steps % save_model_steps == 0:
             
             torch.save(s2s, args.checkpoint + "_" + str(i) + "_" + str(steps))
             batch_loss_value = batch_loss.item()
             ppl = math.exp(batch_loss_value / batch_word_count)
-
-            print("Loss: {}, perplexity: {}, time: {} seconds".format(batch_loss_value, ppl, time.time() - start_time))
+            print("Batch loss: {}, batch perplexity: {}".format(batch_loss_value, ppl))
 
 
     epoch_loss /= word_count

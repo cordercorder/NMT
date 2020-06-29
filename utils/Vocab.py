@@ -1,6 +1,7 @@
 from collections import defaultdict
 from .process import normalizeString
 import pickle
+import os
 
 
 class Vocab:
@@ -32,13 +33,15 @@ class Vocab:
 
     def get_index(self, token):
         """
-        A memory optimization method. If self.__token2index[token] is directly called, an item
-        will insert to token2index, but self.__token2index.get(token) will not
         :param token: token to be encoded. type: str
         :return: unique id of the token. type: int
         """
         if token not in self.__token2index:
-            raise Exception("Token not found")
+
+            if self.unk_token_index is None:
+                raise Exception("Token not found")
+            else:
+                return self.unk_token_index
 
         return self.__token2index.get(token)
 
@@ -48,7 +51,11 @@ class Vocab:
         :return: the token which id is equal to index. type: str
         """
         if index not in self.__index2token:
-            raise Exception("Index not found")
+
+            if self.unk_token is None:
+                raise Exception("Index not found")
+            else:
+                return self.unk_token
 
         return self.__index2token.get(index)
 
@@ -127,6 +134,12 @@ class Vocab:
         :param save_path: path to save the entity. type: str
         :return: None
         """
+
+        directory, file_name = os.path.split(save_path)
+
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
         entity = {
             "language_name": self.language_name,
             "start_token": self.start_token,
@@ -138,6 +151,7 @@ class Vocab:
             "unk_token": self.unk_token,
             "unk_token_index": self.unk_token_index
         }
+
         with open(save_path, "wb") as f:
             pickle.dump(entity, f)
 

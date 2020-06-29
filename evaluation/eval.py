@@ -22,7 +22,8 @@ args, unknown = parser.parse_known_args()
 
 device = args.device
 
-s2s = (torch.load(args.load)["model"]).to(device)
+s2s = (torch.load(args.load)).to(device)
+
 
 src_vocab = Vocab.load(args.test_src_vocab_path)
 tgt_vocab = Vocab.load(args.test_tgt_vocab_path)
@@ -31,12 +32,14 @@ src_data = []
 pred_data = []
 
 with open(args.test_tgt_path) as f:
+
     data = f.read().split("\n")
     tgt_data = [normalizeString(line) for line in data]
 
 max_tgt_length = max(len(line.split()) for line in tgt_data)
 
 with torch.no_grad():
+
     s2s.eval()
 
     with open(args.test_src_path) as f:
@@ -47,10 +50,10 @@ with torch.no_grad():
 
         pred_line = []
 
-        line = " ".join([src_vocab.start_token, normalizeString(line)])
+        line = " ".join([src_vocab.start_token, normalizeString(line, to_ascii=False)])
 
         # inputs: (input_length,)
-        inputs = torch.tensor([src_vocab.get_index(token) for token in line.split()]).to(device)
+        inputs = torch.tensor([src_vocab.get_index(token) for token in line.split()], device=device)
 
         # inputs: (input_length, 1)
         inputs = inputs.view(-1, 1)
@@ -60,7 +63,7 @@ with torch.no_grad():
         encoder_output, encoder_hidden_state = s2s.encoder(inputs)
 
         # decoder_input: (1, 1)
-        decoder_input = torch.tensor([[src_vocab.get_index(src_vocab.start_token)]]).to(device)
+        decoder_input = torch.tensor([[src_vocab.get_index(src_vocab.start_token)]], device=device)
 
         if s2s.encoder.bidirectional_:
 
@@ -109,12 +112,14 @@ with torch.no_grad():
         pred_data.append(pred_line)
 
 with open(args.translation_output, "w") as f:
+
     for tgt, pred in zip(tgt_data, pred_data):
+
         pred = " ".join(pred)
         f.write(tgt + "\n")
         f.write(pred + "\n")
         f.write("\n")
-
+    
     bleu_value = corpus_bleu([[line.split()] for line in tgt_data], pred_data)
     f.write(str(bleu_value))
 

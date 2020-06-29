@@ -1,0 +1,15 @@
+python -u -m trainer.train \
+    --device cuda:1 \
+    --src_language spa \
+    --tgt_language en \
+    --src_path /data/rrjin/NMT/tmpdata/src.spa \
+    --tgt_path /data/rrjin/NMT/tmpdata/tgt.en \
+    --src_vocab_path /data/rrjin/NMT/tmpdata/src.spa.vocab \
+    --tgt_vocab_path /data/rrjin/NMT/tmpdata/tgt.en.vocab \
+    --rnn_type lstm \
+    --embedding_size 512 \
+    --hidden_size 512 \
+    --num_layers 3 \
+    --checkpoint /data/rrjin/NMT/tmpdata/models \
+    --batch_size 32 \
+    --dropout 0.1

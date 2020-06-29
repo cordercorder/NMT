@@ -29,11 +29,14 @@ def normalizeString(s, remove_punctuation=False, to_ascii=True):
         s = unicodeToAscii(s)
 
     # add a space between normal character and punctuation
-    s = re.sub(r"([.!?,¿，。；'‘\"？，“！])", r" \1 ", s)
+    s = re.sub(r"([.!?,¿，。；'‘\"？，“”！])", r" \1 ", s)
 
     if remove_punctuation:
         # remove punctuation
-        s = re.sub(r"[.!?,¿，。；'‘\"？，“！]+", r" ", s)
+        s = re.sub(r"[.!?,¿，。；'‘\"？，“”！]+", r" ", s)
+    else:
+        # remove quotation marks
+        s = re.sub(r"['‘\"“”]+", r" ", s)
     
     s = "".join(c for c in s if c != "@")
 
@@ -58,3 +61,6 @@ if __name__ == "__main__":
     s = "¿Puedo     omar    prestado este libro? \" "
     print(s)
     print(normalizeString(s))
+
+    s = "tom prefers his dirty and and a \" . . . . . . . . . . . . \" . . \" \""
+    print(normalizeString((s)))
