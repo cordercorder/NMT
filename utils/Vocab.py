@@ -1,5 +1,5 @@
 from collections import defaultdict
-from .process import normalizeString
+from utils.process import normalizeString
 import pickle
 import os
 

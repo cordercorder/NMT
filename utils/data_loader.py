@@ -1,5 +1,5 @@
-from .process import normalizeString
-from .Vocab import Vocab
+from utils.process import normalizeString
+from utils.Vocab import Vocab
 import torch
 from torch.utils.data import Dataset, DataLoader
 
