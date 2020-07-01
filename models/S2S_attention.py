@@ -1,5 +1,54 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+
+
+class BahdanauAttention(nn.Module):
+
+    def __init__(self, hidden_size1, hidden_size2, attention_size):
+
+        super(BahdanauAttention, self).__init__()
+
+        self.W1 = nn.Linear(hidden_size1, attention_size)
+        self.W2 = nn.Linear(hidden_size2, attention_size)
+
+        self.V = nn.Linear(attention_size, 1)
+
+
+    def forward(self, hs, ht):
+
+        """
+        :param hs: last hidden state of decoder. (num_layers, batch_size, hidden_size)
+        :param ht: encoder output. (input_length, batch_size, num_directions * hidden_size)
+        :return: context_vector, attention_weights
+        """
+
+        # ht: (batch_size, input_length, num_directions * hidden_size)
+        ht = torch.transpose(ht, 0, 1)
+
+        # hs: (batch_size, num_layers, hidden_size)
+        hs = torch.transpose(hs, 0, 1)
+        # hs: (batch_size, 1, num_layers * hidden_size)
+        hs = hs.view(hs.size(0), 1, -1)
+
+        # W1@ht: (batch_size, input_length, attention_size)
+        # W2@hs: (batch_size, 1, attention_size)
+
+        # W1@ht + W2@hs: (batch_size, input_length, attention_size)
+
+        # score: (batch_size, input_length, 1)
+        score = self.V(F.tanh(self.W1(ht) + self.W2(hs)))
+
+        # attention_weight: (batch_size, input_length, 1)
+        attention_weights = F.softmax(score, dim=1)
+
+        # context_vector: (batch_size, input_length, num_directions * hidden_size)
+        context_vector = attention_weights * ht
+
+        # context_vector: (batch_size, num_directions * hidden_size)
+        context_vector = torch.sum(context_vector, dim=1)
+
+        return context_vector, attention_weights
 
 
 class Encoder(nn.Module):
@@ -59,9 +108,10 @@ class Encoder(nn.Module):
         return output, hidden_state
 
 
-class Decoder(nn.Module):
+class AttentionDecoder(nn.Module):
 
-    def __init__(self, rnn_type, vocab_size, embedding_size, input_size, hidden_size, num_layers, dropout_=0):
+    def __init__(self, rnn_type, vocab_size, embedding_size, input_size, hidden_size, num_layers, attention,
+                 dropout_=0):
 
         """
         :param rnn_type: type of rnn. supporting (RNN, LSTM, GRU). type: str
@@ -70,11 +120,12 @@ class Decoder(nn.Module):
         :param input_size: input_size of rnn
         :param hidden_size: hidden size in each rnn layers. type: int
         :param num_layers: number of rnn layers. type: int
+        :param attention: attention layer
         :param dropout_: if non-zero, introduces a Dropout layer on the outputs of each RNN layer except the last layer,
                          with dropout probability equal to dropout. Default: 0. type: float
         """
 
-        super(Decoder, self).__init__()
+        super(AttentionDecoder, self).__init__()
 
         rnn_type = rnn_type.lower().strip()
 
@@ -83,6 +134,7 @@ class Decoder(nn.Module):
         self.embedding_size = embedding_size
         self.hidden_size = hidden_size
         self.num_layers = num_layers
+        self.attention = attention
         self.drop_out_ = dropout_
 
         if rnn_type != "gru" and rnn_type != "rnn" and rnn_type != "lstm":
@@ -103,13 +155,21 @@ class Decoder(nn.Module):
         """
         :param decoder_input: (1, batch_size)
         :param decoder_hidden_state: (num_layers, batch_size, hidden_size)
-        :param encoder_output: (1, batch_size, num_directions * hidden_size)
+        :param encoder_output: (input_length, batch_size, num_directions * hidden_size)
         """
         # decoder_input: (1, batch_size, embedding_size)
         decoder_input = self.embedding(decoder_input)
 
+        # context_vector: (batch_size, num_directions * hidden_size)
+        # attention_weight: (batch_size, input_length, 1)
+        context_vector, attention_weights = self.attention(decoder_hidden_state, encoder_output)
+
+        # context_vector: (1, batch_size, num_directions * hidden_size)
+        context_vector = context_vector.view(1, context_vector.size(0), context_vector.size(1))
+
         # decoder_input: (1, batch_size, embedding_size + num_directions * hidden_size)
-        decoder_input = torch.cat([decoder_input, encoder_output], dim=2)
+        decoder_input = torch.cat([decoder_input, context_vector], dim=2)
+
         # output: (1, batch_size, hidden_size)
         # hidden_state is hn or (hn, cn)
         # hn: (num_layers, batch_size, hidden_size)
@@ -127,7 +187,7 @@ class Decoder(nn.Module):
         :param target_batch: the shape of target_batch is (input_length, batch_size). type: Tensor
         :param encoder_hidden_state: the shape of encoder_hidden_state is (num_layers, batch_size,hidden_size).
                                      type: Tensor
-        :param encoder_output: the shape of encoder_output is (1, batch_size, num_directions * hidden_size)
+        :param encoder_output: the shape of encoder_output is (input_length, batch_size, num_directions * hidden_size)
         :param use_teacher_forcing: whether use teacher forcing or not. type: bool
         """
 
@@ -184,9 +244,6 @@ class S2S(nn.Module):
         # encoder_output: (input_length, batch_size, num_directions * hidden_size)
         # encoder_hidden_state: (num_layers * num_directions, batch_size, hidden_size)
         encoder_output, encoder_hidden_state = self.encoder(input_batch)
-
-        # encoder_output: (1, batch_size, num_directions * hidden_size)
-        encoder_output = torch.sum(encoder_output, dim=0, keepdim=True)
 
         if self.encoder.bidirectional_:
 

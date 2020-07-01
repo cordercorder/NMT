@@ -48,11 +48,12 @@ tgt_data, tgt_vocab = load_corpus_data(args.tgt_path, args.tgt_language, args.st
 assert len(src_data) == len(tgt_data)
 
 encoder = S2S_basic.Encoder(args.rnn_type, len(src_vocab), args.embedding_size, args.hidden_size, args.num_layers,
-                            args.dropout, args.bidirectional)
+                            args.dropout, args.bidirectional).to(device)
 
-decoder = S2S_basic.Decoder(args.rnn_type, len(tgt_vocab), args.embedding_size,
-                            2 * args.hidden_size if args.bidirectional else args.hidden_size, args.num_layers,
-                            args.dropout)
+decoder = S2S_basic.Decoder(args.rnn_type, len(tgt_vocab), args.embedding_size, args.embedding_size +
+                            (2 * args.hidden_size if args.bidirectional else args.hidden_size),
+                            2 * args.hidden_size if args.bidirectional else args.hidden_size,
+                            args.num_layers,args.dropout).to(device)
 
 s2s = S2S_basic.S2S(encoder, decoder).to(device)
 
