@@ -7,6 +7,12 @@ class BahdanauAttention(nn.Module):
 
     def __init__(self, hidden_size1, hidden_size2, attention_size):
 
+        """
+        :param hidden_size1: num_directions * hidden_size
+        :param hidden_size2: num_layers of decoder * hidden_size of decoder
+        :param attention_size: any integer
+        """
+
         super(BahdanauAttention, self).__init__()
 
         self.W1 = nn.Linear(hidden_size1, attention_size)
@@ -27,9 +33,11 @@ class BahdanauAttention(nn.Module):
         ht = torch.transpose(ht, 0, 1)
 
         # hs: (batch_size, num_layers, hidden_size)
+
         hs = torch.transpose(hs, 0, 1)
+
         # hs: (batch_size, 1, num_layers * hidden_size)
-        hs = hs.view(hs.size(0), 1, -1)
+        hs = hs.reshape(hs.size(0), 1, -1)
 
         # W1@ht: (batch_size, input_length, attention_size)
         # W2@hs: (batch_size, 1, attention_size)
@@ -37,7 +45,7 @@ class BahdanauAttention(nn.Module):
         # W1@ht + W2@hs: (batch_size, input_length, attention_size)
 
         # score: (batch_size, input_length, 1)
-        score = self.V(F.tanh(self.W1(ht) + self.W2(hs)))
+        score = self.V(torch.tanh(self.W1(ht) + self.W2(hs)))
 
         # attention_weight: (batch_size, input_length, 1)
         attention_weights = F.softmax(score, dim=1)
@@ -160,9 +168,21 @@ class AttentionDecoder(nn.Module):
         # decoder_input: (1, batch_size, embedding_size)
         decoder_input = self.embedding(decoder_input)
 
+        if isinstance(decoder_hidden_state, tuple):
+
+            hn, cn = decoder_hidden_state
+
+            # atten_decoder_hidden_state: (num_layers, batch_size, hidden_size)
+            atten_decoder_hidden_state = hn
+
+        else:
+
+            # atten_decoder_hidden_state: (num_layers, batch_size, hidden_size)
+            atten_decoder_hidden_state = decoder_hidden_state
+
         # context_vector: (batch_size, num_directions * hidden_size)
         # attention_weight: (batch_size, input_length, 1)
-        context_vector, attention_weights = self.attention(decoder_hidden_state, encoder_output)
+        context_vector, attention_weights = self.attention(atten_decoder_hidden_state, encoder_output)
 
         # context_vector: (1, batch_size, num_directions * hidden_size)
         context_vector = context_vector.view(1, context_vector.size(0), context_vector.size(1))
@@ -196,11 +216,11 @@ class AttentionDecoder(nn.Module):
         # decoder_input: (1, batch_size)
         decoder_input = input_batch[0].view(1, -1)
 
-        # decoder_output_list: (input_length, batch_size, vocab_size)
-        decoder_batch_output = torch.zeros(size=(target_batch.size(0), target_batch.size(1), self.vocab_size),
-                                           device=input_batch.device)
+        # decoder_batch_output: type: list. (input_length-1, batch_size, vocab_size)
+        decoder_batch_output = []
 
-        for i in range(1, target_batch.size(0) - 1):
+        for i in range(1, target_batch.size(0)):
+
             # target_batch[i]: (batch_size, )
             decoder_output, decoder_hidden_state = self.decode_batch(decoder_input, decoder_hidden_state, encoder_output)
 
@@ -215,7 +235,7 @@ class AttentionDecoder(nn.Module):
                 pred_index = torch.argmax(decoder_output, dim=2)
                 decoder_input = pred_index
 
-            decoder_batch_output[i] = decoder_output[0]
+            decoder_batch_output.append(decoder_output[0])
 
         return decoder_batch_output
 

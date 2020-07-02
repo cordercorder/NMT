@@ -61,6 +61,10 @@ with torch.no_grad():
         # encoder_hidden_state: (num_layers * num_directions, batch_size, hidden_size)
         encoder_output, encoder_hidden_state = s2s.encoder(inputs)
 
+        # encoder_output: (1, batch_size, num_directions * hidden_size)
+        # encoder_output = torch.sum(encoder_output, dim=0, keepdim=True)
+        encoder_output = encoder_output[-1].view(1, encoder_output.size(1), encoder_output.size(2))
+
         # decoder_input: (1, 1)
         decoder_input = torch.tensor([[src_vocab.get_index(src_vocab.start_token)]], device=device)
 
@@ -93,7 +97,7 @@ with torch.no_grad():
         # decoder_hidden_state is hn or (hn, cn)
         # hn: (num_layers, 1, hidden_size)
         # cn: (num_layers, 1, hidden_size)
-        decoder_output, decoder_hidden_state = s2s.decoder.decode_batch(decoder_input, decoder_hidden_state)
+        decoder_output, decoder_hidden_state = s2s.decoder.decode_batch(decoder_input, decoder_hidden_state, encoder_output)
 
         hypothesis_list = [Hypothesis(decoder_hidden_state, decoder_output)]
 
@@ -137,9 +141,9 @@ with torch.no_grad():
                         new_hypothesis = Hypothesis()
                         new_hypothesis.score = hypothesis.score + math.log2(pred_token_prob[i])
 
-                        # ignore end token
                         new_hypothesis.pred_index_list = copy.deepcopy(hypothesis.pred_index_list)
 
+                        new_hypothesis.pred_index_list.append(token_index.item())
                         new_hypothesis.complete = True
 
                         new_hypothesis_list.append(hypothesis)
@@ -148,7 +152,8 @@ with torch.no_grad():
 
                         decoder_input = token_index.view(-1, 1)
                         new_decoder_output, new_decoder_hidden_state = s2s.decoder.decode_batch(decoder_input,
-                                                                                                decoder_hidden_state)
+                                                                                                decoder_hidden_state,
+                                                                                                encoder_output)
 
                         new_hypothesis = Hypothesis(new_decoder_hidden_state, new_decoder_output)
 

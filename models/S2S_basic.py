@@ -109,7 +109,7 @@ class Decoder(nn.Module):
         decoder_input = self.embedding(decoder_input)
 
         # decoder_input: (1, batch_size, embedding_size + num_directions * hidden_size)
-        decoder_input = torch.cat([decoder_input, encoder_output], dim=2)
+        decoder_input = torch.cat([encoder_output, decoder_input], dim=2)
         # output: (1, batch_size, hidden_size)
         # hidden_state is hn or (hn, cn)
         # hn: (num_layers, batch_size, hidden_size)
@@ -136,11 +136,11 @@ class Decoder(nn.Module):
         # decoder_input: (1, batch_size)
         decoder_input = input_batch[0].view(1, -1)
 
-        # decoder_output_list: (input_length, batch_size, vocab_size)
-        decoder_batch_output = torch.zeros(size=(target_batch.size(0), target_batch.size(1), self.vocab_size),
-                                           device=input_batch.device)
+        # decoder_batch_output: type: list. (input_length-1, batch_size, vocab_size)
+        decoder_batch_output = []
 
-        for i in range(1, target_batch.size(0) - 1):
+        for i in range(1, target_batch.size(0)):
+
             # target_batch[i]: (batch_size, )
             decoder_output, decoder_hidden_state = self.decode_batch(decoder_input, decoder_hidden_state, encoder_output)
 
@@ -152,10 +152,11 @@ class Decoder(nn.Module):
                 # pred_tensor, pred_index = decoder_output.topk(1, dim=2)
                 # decoder_input = torch.squeeze(pred_index, 2)
 
+                # pred_index: (1, batch_size)
                 pred_index = torch.argmax(decoder_output, dim=2)
                 decoder_input = pred_index
 
-            decoder_batch_output[i] = decoder_output[0]
+            decoder_batch_output.append(decoder_output[0])
 
         return decoder_batch_output
 
@@ -186,7 +187,8 @@ class S2S(nn.Module):
         encoder_output, encoder_hidden_state = self.encoder(input_batch)
 
         # encoder_output: (1, batch_size, num_directions * hidden_size)
-        encoder_output = torch.sum(encoder_output, dim=0, keepdim=True)
+        # encoder_output = torch.sum(encoder_output, dim=0, keepdim=True)
+        encoder_output = encoder_output[-1].view(1, encoder_output.size(1), encoder_output.size(2))
 
         if self.encoder.bidirectional_:
 

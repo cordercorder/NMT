@@ -2,6 +2,7 @@ import argparse
 import torch
 import torch.nn as nn
 from models import S2S_basic
+from models import S2S_attention
 from utils.data_loader import load_corpus_data, NMTDataset, collate
 from torch.utils.data import DataLoader
 import random
@@ -22,6 +23,9 @@ parser.add_argument("--embedding_size", required=True, type=int)
 parser.add_argument("--hidden_size", required=True, type=int)
 parser.add_argument("--num_layers", required=True, type=int)
 parser.add_argument("--checkpoint", required=True)
+
+# use attention or not
+parser.add_argument("--attention_size", type=int)
 
 parser.add_argument("--epoch", default=10)
 parser.add_argument("--learning_rate", default=0.001, type=float)
@@ -45,17 +49,38 @@ src_data, src_vocab = load_corpus_data(args.src_path, args.src_language, args.st
 tgt_data, tgt_vocab = load_corpus_data(args.tgt_path, args.tgt_language, args.start_token, args.end_token,
                                        args.tgt_vocab_path, args.unk, args.threshold)
 
+print("Source language vocab size: {}".format(len(src_vocab)))
+print("Target language vocab size: {}".format(len(tgt_vocab)))
+
+
 assert len(src_data) == len(tgt_data)
 
-encoder = S2S_basic.Encoder(args.rnn_type, len(src_vocab), args.embedding_size, args.hidden_size, args.num_layers,
-                            args.dropout, args.bidirectional).to(device)
+if args.attention_size:
 
-decoder = S2S_basic.Decoder(args.rnn_type, len(tgt_vocab), args.embedding_size, args.embedding_size +
-                            (2 * args.hidden_size if args.bidirectional else args.hidden_size),
-                            2 * args.hidden_size if args.bidirectional else args.hidden_size,
-                            args.num_layers,args.dropout).to(device)
+    print("Attention Model")
+    encoder = S2S_attention.Encoder(args.rnn_type, len(src_vocab), args.embedding_size, args.hidden_size,
+                                    args.num_layers,args.dropout, args.bidirectional).to(device)
+    attention = S2S_attention.BahdanauAttention(2 * args.hidden_size if args.bidirectional else args.hidden_size,
+                                                args.num_layers * (2 * args.hidden_size if args.bidirectional
+                                                                   else args.hidden_size),
+                                                args.attention_size)
+    decoder = S2S_attention.AttentionDecoder(args.rnn_type, len(tgt_vocab), args.embedding_size, args.embedding_size +
+                                             (2 * args.hidden_size if args.bidirectional else args.hidden_size),
+                                             2 * args.hidden_size if args.bidirectional else args.hidden_size,
+                                             args.num_layers, attention, args.dropout).to(device)
+    s2s = S2S_attention.S2S(encoder, decoder).to(device)
 
-s2s = S2S_basic.S2S(encoder, decoder).to(device)
+else:
+    print("Basic Model")
+    encoder = S2S_basic.Encoder(args.rnn_type, len(src_vocab), args.embedding_size, args.hidden_size, args.num_layers,
+                                args.dropout, args.bidirectional).to(device)
+
+    decoder = S2S_basic.Decoder(args.rnn_type, len(tgt_vocab), args.embedding_size, args.embedding_size +
+                                (2 * args.hidden_size if args.bidirectional else args.hidden_size),
+                                2 * args.hidden_size if args.bidirectional else args.hidden_size,
+                                args.num_layers, args.dropout).to(device)
+
+    s2s = S2S_basic.S2S(encoder, decoder).to(device)
 
 optimizer = torch.optim.Adam(s2s.parameters(), args.learning_rate)
 
@@ -85,17 +110,17 @@ for i in range(args.epoch):
 
     for j, (input_batch, target_batch) in enumerate(train_loader):
 
-        # output: (input_length, batch_size, vocab_size)
+        # output: type: list. (input_length-1, batch_size, vocab_size). ignore the start token
         # target_batch: (input_length, batch_size)
         output = s2s(input_batch, target_batch, use_teacher_forcing_list[j])
 
-        batch_loss = 0.0
+        batch_loss = torch.zeros(1, device=device)
 
-        for j in range(1, target_batch.size(0) - 1):
+        for k in range(1, target_batch.size(0)):
             # tmp_input_batch: (batch_size, vocab_size)
             # tmp_target_batch: (batch_size, )
-            tmp_output_batch = output[j]
-            tmp_target_batch = target_batch[j]
+            tmp_output_batch = output[k-1]
+            tmp_target_batch = target_batch[k]
             mask = torch.ne(tmp_target_batch, padding_value).float()
             # tmp_loss: (batch_size, )
             tmp_loss = criterion(tmp_output_batch, tmp_target_batch)
