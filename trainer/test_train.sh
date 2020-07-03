@@ -2,15 +2,14 @@ python -u -m trainer.train \
     --device cuda:2 \
     --src_language spa \
     --tgt_language en \
-    --src_path /data/rrjin/NMT/tmpdata/src.spa \
-    --tgt_path /data/rrjin/NMT/tmpdata/tgt.en \
+    --src_path /data/rrjin/NMT/tmpdata/train_src.spa \
+    --tgt_path /data/rrjin/NMT/tmpdata/train_tgt.en \
     --src_vocab_path /data/rrjin/NMT/tmpdata/src.spa.vocab \
     --tgt_vocab_path /data/rrjin/NMT/tmpdata/tgt.en.vocab \
     --rnn_type lstm \
     --embedding_size 512 \
     --hidden_size 512 \
     --num_layers 3 \
-    --attention_size 512 \
-    --checkpoint /data/rrjin/NMT/tmpdata/model_attention_lstm \
+    --checkpoint /data/rrjin/NMT/tmpdata/model_basic_lstm \
     --batch_size 64 \
     --dropout 0.1

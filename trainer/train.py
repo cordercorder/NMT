@@ -38,16 +38,17 @@ parser.add_argument("--unk", default="UNK")
 parser.add_argument("--threshold", default=0, type=int)
 parser.add_argument("--save_model_steps", default=0.3, type=float)
 parser.add_argument("--teacher_forcing_ratio", default=0.5, type=float)
+parser.add_argument("--mask_token", default="<mask>")
 
 args, unknown = parser.parse_known_args()
 
 device = torch.device(args.device)
 
 src_data, src_vocab = load_corpus_data(args.src_path, args.src_language, args.start_token, args.end_token,
-                                       args.src_vocab_path, args.unk, args.threshold)
+                                       args.mask_token, args.src_vocab_path, args.unk, args.threshold)
 
 tgt_data, tgt_vocab = load_corpus_data(args.tgt_path, args.tgt_language, args.start_token, args.end_token,
-                                       args.tgt_vocab_path, args.unk, args.threshold)
+                                       args.mask_token, args.tgt_vocab_path, args.unk, args.threshold)
 
 print("Source language vocab size: {}".format(len(src_vocab)))
 print("Target language vocab size: {}".format(len(tgt_vocab)))
@@ -75,8 +76,7 @@ else:
     encoder = S2S_basic.Encoder(args.rnn_type, len(src_vocab), args.embedding_size, args.hidden_size, args.num_layers,
                                 args.dropout, args.bidirectional).to(device)
 
-    decoder = S2S_basic.Decoder(args.rnn_type, len(tgt_vocab), args.embedding_size, args.embedding_size +
-                                (2 * args.hidden_size if args.bidirectional else args.hidden_size),
+    decoder = S2S_basic.Decoder(args.rnn_type, len(tgt_vocab), args.embedding_size,
                                 2 * args.hidden_size if args.bidirectional else args.hidden_size,
                                 args.num_layers, args.dropout).to(device)
 
@@ -86,9 +86,9 @@ optimizer = torch.optim.Adam(s2s.parameters(), args.learning_rate)
 
 criterion = nn.CrossEntropyLoss(reduction="none")
 
-padding_value = src_vocab.get_index(args.end_token)
+padding_value = src_vocab.get_index(args.mask_token)
 
-assert padding_value == tgt_vocab.get_index(args.end_token)
+assert padding_value == tgt_vocab.get_index(args.mask_token)
 
 train_data = NMTDataset(src_data, tgt_data)
 train_loader = DataLoader(train_data, args.batch_size, shuffle=True, collate_fn=lambda batch: collate(batch, padding_value, device))

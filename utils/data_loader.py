@@ -16,9 +16,9 @@ class NMTDataset(Dataset):
     def __len__(self):
         return len(self.data)
 
-def load_corpus_data(data_path, language_name, start_token, end_token, vocab_path, unk="UNK", threshold=0):
+def load_corpus_data(data_path, language_name, start_token, end_token, mask_token, vocab_path, unk="UNK", threshold=0):
 
-    v = Vocab(language_name, start_token, end_token, threshold)
+    v = Vocab(language_name, start_token, end_token, mask_token, threshold=threshold)
 
     corpus = []
 

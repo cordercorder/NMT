@@ -5,6 +5,7 @@ from utils.Vocab import Vocab
 from utils.process import normalizeString
 from nltk.translate.bleu_score import corpus_bleu
 from utils.Hypothesis import Hypothesis
+from models import S2S_attention, S2S_basic
 import copy
 import math
 
@@ -18,7 +19,7 @@ parser.add_argument("--test_src_vocab_path", required=True)
 parser.add_argument("--test_tgt_vocab_path", required=True)
 parser.add_argument("--translation_output", required=True)
 
-parser.add_argument("--beam_size", default=5, type=int)
+parser.add_argument("--beam_size", default=3, type=int)
 
 args, unknown = parser.parse_known_args()
 
@@ -26,6 +27,31 @@ device = args.device
 
 s2s = (torch.load(args.load)).to(device)
 
+if isinstance(s2s, S2S_basic.S2S):
+    print("Basic Model!")
+
+elif isinstance(s2s, S2S_attention.S2S):
+
+    print("Attention Model")
+else:
+    raise Exception("Error!")
+
+def decode_batch(decoder_input, decoder_hidden_state, encoder_output):
+
+
+    if isinstance(decoder_hidden_state, tuple):
+
+        hn, cn = decoder_hidden_state
+        hn = hn.to(device)
+        cn = cn.to(device)
+        decoder_hidden_state = (hn, cn)
+    else:
+        decoder_hidden_state = decoder_hidden_state.to(device)
+
+    if isinstance(s2s, S2S_attention.S2S):
+        return s2s.decoder.decode_batch(decoder_input, decoder_hidden_state, encoder_output)
+    else:
+        return s2s.decoder.decode_batch(decoder_input, decoder_hidden_state)
 
 src_vocab = Vocab.load(args.test_src_vocab_path)
 tgt_vocab = Vocab.load(args.test_tgt_vocab_path)
@@ -49,6 +75,7 @@ with torch.no_grad():
 
         line = " ".join([src_vocab.start_token, normalizeString(line, to_ascii=False)])
 
+        print(line)
         # inputs: (input_length,)
         inputs = torch.tensor([src_vocab.get_index(token) for token in line.split()], device=device)
 
@@ -57,13 +84,9 @@ with torch.no_grad():
         # inputs: (input_length, 1)
         inputs = inputs.view(-1, 1)
 
-        # encoder_output: (input_length, batch_size, num_directions * hidden_size)
-        # encoder_hidden_state: (num_layers * num_directions, batch_size, hidden_size)
+        # encoder_output: (input_length, 1, num_directions * hidden_size)
+        # encoder_hidden_state: (num_layers * num_directions, 1, hidden_size)
         encoder_output, encoder_hidden_state = s2s.encoder(inputs)
-
-        # encoder_output: (1, batch_size, num_directions * hidden_size)
-        # encoder_output = torch.sum(encoder_output, dim=0, keepdim=True)
-        encoder_output = encoder_output[-1].view(1, encoder_output.size(1), encoder_output.size(2))
 
         # decoder_input: (1, 1)
         decoder_input = torch.tensor([[src_vocab.get_index(src_vocab.start_token)]], device=device)
@@ -93,85 +116,110 @@ with torch.no_grad():
                 decoder_hidden_state = torch.cat([encoder_hidden_state[:, 0, :, :],
                                                   encoder_hidden_state[:, 1, :, :]], dim=2)
 
-        # decoder_output: (1, 1, vocab_size)
-        # decoder_hidden_state is hn or (hn, cn)
-        # hn: (num_layers, 1, hidden_size)
-        # cn: (num_layers, 1, hidden_size)
-        decoder_output, decoder_hidden_state = s2s.decoder.decode_batch(decoder_input, decoder_hidden_state, encoder_output)
+        hypothesis_list = [Hypothesis(decoder_hidden_state, decoder_input)]
 
-        hypothesis_list = [Hypothesis(decoder_hidden_state, decoder_output)]
+        complete_hypothesis_list = []
 
-        all_complete = False
+        import time
 
-        while len(hypothesis_list) > 0 and not all_complete:
+        start_time = time.time()
+
+        while len(hypothesis_list) > 0:
 
             new_hypothesis_list = []
 
-            for hypothesis in hypothesis_list:
+            # for optimization, store the result calculating by GPU
+            pred_list = torch.zeros(len(hypothesis_list), len(tgt_vocab))
+            hn_list = torch.zeros(len(hypothesis_list), s2s.decoder.num_layers, 1,
+                                  s2s.decoder.hidden_size)
+            if s2s.decoder.rnn_type == "lstm":
+                cn_list = torch.zeros(len(hypothesis_list), s2s.decoder.num_layers, 1,
+                                 s2s.decoder.hidden_size)
+            else:
+                hn_list = torch.zeros(len(hypothesis_list), s2s.decoder.num_layers, 1,
+                                 s2s.decoder.hidden_size)
 
-                if hypothesis.complete:
 
-                    new_hypothesis_list.append(hypothesis)
-                    continue
+            for i, hypothesis in enumerate(hypothesis_list):
 
                 if len(hypothesis) >= max_length:
-                    hypothesis.complete = True
-                    new_hypothesis_list.append(hypothesis)
+
+                    complete_hypothesis_list.append((hypothesis.pred_index_list, hypothesis.score))
                     continue
 
-                decoder_output = hypothesis.decoder_output
+                if tgt_vocab.get_token(hypothesis.decoder_input) == tgt_vocab.end_token:
+
+                    complete_hypothesis_list.append((hypothesis.pred_index_list[:-1], hypothesis.score))
+                    continue
+
+                decoder_input = torch.tensor([[hypothesis.decoder_input]], device=device)
+
                 decoder_hidden_state = hypothesis.decoder_hidden_state
+
+                decoder_output , decoder_hidden_state = decode_batch(decoder_input, decoder_hidden_state,
+                                                                     encoder_output)
 
                 # pred: (1, 1, vocab_size)
                 pred = F.softmax(decoder_output, dim=2)
 
-                # pred_token_prob: (1, 1, args.beam_size)
-                # pred_token_index: (1, 1, args.beam_size)
-                pred_token_prob, pred_token_index = torch.topk(pred, args.beam_size, dim=2)
+                # pred: (vocab_size)
+                pred = torch.squeeze(pred)
 
-                # pred_token_prob: (args.beam_size, )
-                # pred_token_index: (args.beam_size, )
-                pred_token_prob = pred_token_prob.view(args.beam_size)
-                pred_token_index = pred_token_index.view(args.beam_size)
+                pred_list[i] = pred
 
-                for i, token_index in enumerate(pred_token_index):
+                if s2s.decoder.rnn_type == "lstm":
+                    hn_list[i], cn_list[i] = decoder_hidden_state
+                else:
+                    hn_list[i] = decoder_hidden_state
 
-                    if token_index.item() == tgt_vocab.get_index(tgt_vocab.end_token):
+            for i, hypothesis in enumerate(hypothesis_list):
 
-                        new_hypothesis = Hypothesis()
-                        new_hypothesis.score = hypothesis.score + math.log2(pred_token_prob[i])
+                if len(hypothesis) >= max_length:
+                    continue
 
-                        new_hypothesis.pred_index_list = copy.deepcopy(hypothesis.pred_index_list)
+                if tgt_vocab.get_token(hypothesis.decoder_input) == tgt_vocab.end_token:
+                    continue
 
-                        new_hypothesis.pred_index_list.append(token_index.item())
-                        new_hypothesis.complete = True
+                pred = pred_list[i]
 
-                        new_hypothesis_list.append(hypothesis)
+                for j in range(pred.size(0)):
 
+                    new_hypothesis = Hypothesis()
+                    new_hypothesis.score = hypothesis.score + math.log2(pred[j])
+
+                    if s2s.decoder.rnn_type == "lstm":
+                        new_hypothesis.decoder_hidden_state = hn_list[i], cn_list[i]
                     else:
+                        new_hypothesis.decoder_hidden_state = hn_list[i]
 
-                        decoder_input = token_index.view(-1, 1)
-                        new_decoder_output, new_decoder_hidden_state = s2s.decoder.decode_batch(decoder_input,
-                                                                                                decoder_hidden_state,
-                                                                                                encoder_output)
+                    new_hypothesis.decoder_input = j
 
-                        new_hypothesis = Hypothesis(new_decoder_hidden_state, new_decoder_output)
+                    new_hypothesis.prev_hypothesis = hypothesis
 
-                        new_hypothesis.score = hypothesis.score + math.log2(pred_token_prob[i])
-                        new_hypothesis.pred_index_list = copy.deepcopy(hypothesis.pred_index_list)
-                        new_hypothesis.pred_index_list.append(token_index.item())
-
-                        new_hypothesis_list.append(new_hypothesis)
+                    new_hypothesis_list.append(new_hypothesis)
 
             new_hypothesis_list.sort(key=lambda item: -item.score)
-            hypothesis_list = new_hypothesis_list[:args.beam_size]
 
-            all_complete = True
-            for hypothesis in hypothesis_list:
-                if not hypothesis.complete:
-                    all_complete = False
+            new_hypothesis_list = new_hypothesis_list[:args.beam_size]
 
-        pred_line_index = hypothesis_list[0].pred_index_list
+            for hypothesis in new_hypothesis_list:
+
+                hypothesis.pred_index_list = copy.deepcopy(hypothesis.prev_hypothesis.pred_index_list)
+
+                hypothesis.pred_index_list.append(hypothesis.decoder_input)
+
+            hypothesis_list = new_hypothesis_list
+
+        print("Time: {} seconds".format(time.time() - start_time))
+
+        max_score_id = 0
+        for i in range(len(complete_hypothesis_list)):
+
+            if complete_hypothesis_list[i][1] > complete_hypothesis_list[max_score_id][1]:
+
+                max_score_id = i
+
+        pred_line_index = complete_hypothesis_list[max_score_id][0]
 
         # print(pred_line_index)
         pred_line = [tgt_vocab.get_token(index) for index in pred_line_index]

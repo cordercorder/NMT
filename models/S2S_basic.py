@@ -61,13 +61,12 @@ class Encoder(nn.Module):
 
 class Decoder(nn.Module):
 
-    def __init__(self, rnn_type, vocab_size, embedding_size, input_size, hidden_size, num_layers, dropout_=0):
+    def __init__(self, rnn_type, vocab_size, embedding_size, hidden_size, num_layers, dropout_=0):
 
         """
         :param rnn_type: type of rnn. supporting (RNN, LSTM, GRU). type: str
         :param vocab_size: size of vocabulary. type: int
         :param embedding_size: size of each embedding vector
-        :param input_size: input_size of rnn
         :param hidden_size: hidden size in each rnn layers. type: int
         :param num_layers: number of rnn layers. type: int
         :param dropout_: if non-zero, introduces a Dropout layer on the outputs of each RNN layer except the last layer,
@@ -91,25 +90,27 @@ class Decoder(nn.Module):
         self.embedding = nn.Embedding(vocab_size, embedding_size)
 
         if rnn_type == "gru":
-            self.rnn = nn.GRU(input_size, hidden_size, num_layers, dropout=dropout_)
+            self.rnn = nn.GRU(embedding_size, hidden_size, num_layers, dropout=dropout_)
         elif rnn_type == "rnn":
-            self.rnn = nn.RNN(input_size, hidden_size, num_layers, dropout=dropout_)
+            self.rnn = nn.RNN(embedding_size, hidden_size, num_layers, dropout=dropout_)
         else:
-            self.rnn = nn.LSTM(input_size, hidden_size, num_layers, dropout=dropout_)
+            self.rnn = nn.LSTM(embedding_size, hidden_size, num_layers, dropout=dropout_)
 
         self.fc = nn.Linear(self.hidden_size, vocab_size)
 
-    def decode_batch(self, decoder_input, decoder_hidden_state, encoder_output):
+    def decode_batch(self, decoder_input, decoder_hidden_state):
         """
         :param decoder_input: (1, batch_size)
         :param decoder_hidden_state: (num_layers, batch_size, hidden_size)
-        :param encoder_output: (1, batch_size, num_directions * hidden_size)
         """
         # decoder_input: (1, batch_size, embedding_size)
         decoder_input = self.embedding(decoder_input)
 
+        # ------deprecated------ #
         # decoder_input: (1, batch_size, embedding_size + num_directions * hidden_size)
-        decoder_input = torch.cat([encoder_output, decoder_input], dim=2)
+        # decoder_input = torch.cat([encoder_output, decoder_input], dim=2)
+        # ---------------------- #
+
         # output: (1, batch_size, hidden_size)
         # hidden_state is hn or (hn, cn)
         # hn: (num_layers, batch_size, hidden_size)
@@ -121,13 +122,12 @@ class Decoder(nn.Module):
 
         return output, hidden_state
 
-    def forward(self, input_batch, target_batch, encoder_hidden_state, encoder_output, use_teacher_forcing):
+    def forward(self, input_batch, target_batch, encoder_hidden_state, use_teacher_forcing):
         """
         :param input_batch: the shape of input_batch is (input_length, batch_size). type: Tensor
         :param target_batch: the shape of target_batch is (input_length, batch_size). type: Tensor
         :param encoder_hidden_state: the shape of encoder_hidden_state is (num_layers, batch_size,hidden_size).
                                      type: Tensor
-        :param encoder_output: the shape of encoder_output is (1, batch_size, num_directions * hidden_size)
         :param use_teacher_forcing: whether use teacher forcing or not. type: bool
         """
 
@@ -142,7 +142,7 @@ class Decoder(nn.Module):
         for i in range(1, target_batch.size(0)):
 
             # target_batch[i]: (batch_size, )
-            decoder_output, decoder_hidden_state = self.decode_batch(decoder_input, decoder_hidden_state, encoder_output)
+            decoder_output, decoder_hidden_state = self.decode_batch(decoder_input, decoder_hidden_state)
 
             if use_teacher_forcing:
                 decoder_input = target_batch[i].view(1, -1)
@@ -186,9 +186,11 @@ class S2S(nn.Module):
         # encoder_hidden_state: (num_layers * num_directions, batch_size, hidden_size)
         encoder_output, encoder_hidden_state = self.encoder(input_batch)
 
+        # ------deprecated------ #
         # encoder_output: (1, batch_size, num_directions * hidden_size)
         # encoder_output = torch.sum(encoder_output, dim=0, keepdim=True)
-        encoder_output = encoder_output[-1].view(1, encoder_output.size(1), encoder_output.size(2))
+        # encoder_output = encoder_output[-1].view(1, encoder_output.size(1), encoder_output.size(2))
+        # ---------------------- #
 
         if self.encoder.bidirectional_:
 
@@ -215,7 +217,6 @@ class S2S(nn.Module):
                 # encoder_hidden_state: (num_layers, batch_size, 2 * hidden_size)
                 encoder_hidden_state = torch.cat([encoder_hidden_state[:, 0, :, :], encoder_hidden_state[:, 1, :, :]],
                                                  dim=2)
-        decoder_output = self.decoder(input_batch, target_batch, encoder_hidden_state, encoder_output,
-                                      use_teacher_forcing)
+        decoder_output = self.decoder(input_batch, target_batch, encoder_hidden_state, use_teacher_forcing)
 
         return decoder_output

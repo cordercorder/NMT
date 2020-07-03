@@ -6,12 +6,13 @@ import os
 
 class Vocab:
 
-    def __init__(self, language_name, start_token, end_token, threshold=0):
+    def __init__(self, language_name, start_token, end_token, mask_token, threshold=0):
 
         """
         :param language_name: name of language that needed to be processing. type: str
         :param start_token: start token before a sentence. type: str
         :param end_token: end token at the end of a sentence. type: str
+        :param mask_token: mask token
         :param threshold: minimum frequency of the token to be taken into account, default 0. type: int
         :return: None
         """
@@ -19,6 +20,7 @@ class Vocab:
         self.language_name = language_name
         self.start_token = start_token
         self.end_token = end_token
+        self.mask_token = mask_token
         self.threshold = threshold
 
         self.__token2index = {}
@@ -30,6 +32,7 @@ class Vocab:
 
         self.addtoken(self.start_token)
         self.addtoken(self.end_token)
+        self.addtoken(self.mask_token)
 
     def get_index(self, token):
         """
