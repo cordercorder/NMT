@@ -36,22 +36,13 @@ elif isinstance(s2s, S2S_attention.S2S):
 else:
     raise Exception("Error!")
 
+
 def decode_batch(decoder_input, decoder_hidden_state, encoder_output):
-
-
-    if isinstance(decoder_hidden_state, tuple):
-
-        hn, cn = decoder_hidden_state
-        hn = hn.to(device)
-        cn = cn.to(device)
-        decoder_hidden_state = (hn, cn)
-    else:
-        decoder_hidden_state = decoder_hidden_state.to(device)
-
     if isinstance(s2s, S2S_attention.S2S):
         return s2s.decoder.decode_batch(decoder_input, decoder_hidden_state, encoder_output)
     else:
         return s2s.decoder.decode_batch(decoder_input, decoder_hidden_state)
+
 
 src_vocab = Vocab.load(args.test_src_vocab_path)
 tgt_vocab = Vocab.load(args.test_tgt_vocab_path)
@@ -75,7 +66,7 @@ with torch.no_grad():
 
         line = " ".join([src_vocab.start_token, normalizeString(line, to_ascii=False)])
 
-        print(line)
+        # print(line)
         # inputs: (input_length,)
         inputs = torch.tensor([src_vocab.get_index(token) for token in line.split()], device=device)
 
@@ -120,36 +111,25 @@ with torch.no_grad():
 
         complete_hypothesis_list = []
 
-        import time
+        pred_list = [None] * args.beam_size
+        decoder_hidden_state_list = [None] * args.beam_size
 
-        start_time = time.time()
+        # import time
+        #
+        # start_time = time.time()
 
         while len(hypothesis_list) > 0:
 
             new_hypothesis_list = []
 
             # for optimization, store the result calculating by GPU
-            pred_list = torch.zeros(len(hypothesis_list), len(tgt_vocab))
-            hn_list = torch.zeros(len(hypothesis_list), s2s.decoder.num_layers, 1,
-                                  s2s.decoder.hidden_size)
-            if s2s.decoder.rnn_type == "lstm":
-                cn_list = torch.zeros(len(hypothesis_list), s2s.decoder.num_layers, 1,
-                                 s2s.decoder.hidden_size)
-            else:
-                hn_list = torch.zeros(len(hypothesis_list), s2s.decoder.num_layers, 1,
-                                 s2s.decoder.hidden_size)
-
 
             for i, hypothesis in enumerate(hypothesis_list):
 
                 if len(hypothesis) >= max_length:
-
-                    complete_hypothesis_list.append((hypothesis.pred_index_list, hypothesis.score))
                     continue
 
                 if tgt_vocab.get_token(hypothesis.decoder_input) == tgt_vocab.end_token:
-
-                    complete_hypothesis_list.append((hypothesis.pred_index_list[:-1], hypothesis.score))
                     continue
 
                 decoder_input = torch.tensor([[hypothesis.decoder_input]], device=device)
@@ -159,44 +139,45 @@ with torch.no_grad():
                 decoder_output , decoder_hidden_state = decode_batch(decoder_input, decoder_hidden_state,
                                                                      encoder_output)
 
+                decoder_hidden_state_list[i] = decoder_hidden_state
                 # pred: (1, 1, vocab_size)
                 pred = F.softmax(decoder_output, dim=2)
 
                 # pred: (vocab_size)
                 pred = torch.squeeze(pred)
 
-                pred_list[i] = pred
+                pred = pred.log2()
 
-                if s2s.decoder.rnn_type == "lstm":
-                    hn_list[i], cn_list[i] = decoder_hidden_state
-                else:
-                    hn_list[i] = decoder_hidden_state
+                pred_list[i] = pred.tolist()
 
             for i, hypothesis in enumerate(hypothesis_list):
 
                 if len(hypothesis) >= max_length:
+                    complete_hypothesis_list.append((hypothesis.pred_index_list, hypothesis.score))
                     continue
 
                 if tgt_vocab.get_token(hypothesis.decoder_input) == tgt_vocab.end_token:
+                    complete_hypothesis_list.append((hypothesis.pred_index_list[:-1], hypothesis.score))
                     continue
 
                 pred = pred_list[i]
 
-                for j in range(pred.size(0)):
+                # start_time = time.time()
+
+                for j in range(len(pred)):
 
                     new_hypothesis = Hypothesis()
-                    new_hypothesis.score = hypothesis.score + math.log2(pred[j])
-
-                    if s2s.decoder.rnn_type == "lstm":
-                        new_hypothesis.decoder_hidden_state = hn_list[i], cn_list[i]
-                    else:
-                        new_hypothesis.decoder_hidden_state = hn_list[i]
+                    new_hypothesis.score = hypothesis.score + pred[j]
 
                     new_hypothesis.decoder_input = j
 
                     new_hypothesis.prev_hypothesis = hypothesis
+                    new_hypothesis.decoder_hidden_state = decoder_hidden_state_list[i]
 
                     new_hypothesis_list.append(new_hypothesis)
+
+                # print("Time: {} seconds".format(time.time() - start_time))
+
 
             new_hypothesis_list.sort(key=lambda item: -item.score)
 
@@ -210,7 +191,7 @@ with torch.no_grad():
 
             hypothesis_list = new_hypothesis_list
 
-        print("Time: {} seconds".format(time.time() - start_time))
+        # print("Time: {} seconds".format(time.time() - start_time))
 
         max_score_id = 0
         for i in range(len(complete_hypothesis_list)):
