@@ -7,7 +7,7 @@ from nltk.translate.bleu_score import corpus_bleu
 from utils.Hypothesis import Hypothesis
 from models import S2S_attention, S2S_basic
 import copy
-import math
+
 
 parser = argparse.ArgumentParser()
 
@@ -15,8 +15,8 @@ parser.add_argument("--device", required=True)
 parser.add_argument("--load", required=True)
 parser.add_argument("--test_src_path", required=True)
 parser.add_argument("--test_tgt_path", required=True)
-parser.add_argument("--test_src_vocab_path", required=True)
-parser.add_argument("--test_tgt_vocab_path", required=True)
+parser.add_argument("--src_vocab_path", required=True)
+parser.add_argument("--tgt_vocab_path", required=True)
 parser.add_argument("--translation_output", required=True)
 
 parser.add_argument("--beam_size", default=3, type=int)
@@ -44,8 +44,8 @@ def decode_batch(decoder_input, decoder_hidden_state, encoder_output):
         return s2s.decoder.decode_batch(decoder_input, decoder_hidden_state)
 
 
-src_vocab = Vocab.load(args.test_src_vocab_path)
-tgt_vocab = Vocab.load(args.test_tgt_vocab_path)
+src_vocab = Vocab.load(args.src_vocab_path)
+tgt_vocab = Vocab.load(args.tgt_vocab_path)
 
 pred_data = []
 
@@ -64,13 +64,13 @@ with torch.no_grad():
 
     for line in data:
 
-        line = " ".join([src_vocab.start_token, normalizeString(line, to_ascii=False)])
+        line = " ".join([src_vocab.start_token, normalizeString(line, to_ascii=False), src_vocab.end_token])
 
         # print(line)
         # inputs: (input_length,)
         inputs = torch.tensor([src_vocab.get_index(token) for token in line.split()], device=device)
 
-        max_length = (inputs.size(0) -1) * 3
+        max_length = (inputs.size(0) -2) * 3
 
         # inputs: (input_length, 1)
         inputs = inputs.view(-1, 1)
@@ -114,9 +114,9 @@ with torch.no_grad():
         pred_list = [None] * args.beam_size
         decoder_hidden_state_list = [None] * args.beam_size
 
-        # import time
-        #
-        # start_time = time.time()
+        import time
+
+        start_time = time.time()
 
         while len(hypothesis_list) > 0:
 
@@ -191,7 +191,7 @@ with torch.no_grad():
 
             hypothesis_list = new_hypothesis_list
 
-        # print("Time: {} seconds".format(time.time() - start_time))
+        print("Time: {} seconds".format(time.time() - start_time))
 
         max_score_id = 0
         for i in range(len(complete_hypothesis_list)):

@@ -49,9 +49,12 @@ def normalizeString(s, remove_punctuation=False, to_ascii=True):
     return s
 
 
-def sort_sentence_by_length(data):
+def sort_src_sentence_by_length(data):
 
-    return data.sort(key=lambda item: len(item))
+    data.sort(key=lambda item: len(item[0]))
+
+    src_data, tgt_data = list(zip(*data))
+    return src_data, tgt_data
 
 
 if __name__ == "__main__":

@@ -5,6 +5,7 @@ from models import S2S_basic
 from models import S2S_attention
 from utils.data_loader import load_corpus_data, NMTDataset, collate
 from torch.utils.data import DataLoader
+from utils.process import sort_src_sentence_by_length
 import random
 import time
 import math
@@ -55,6 +56,8 @@ print("Target language vocab size: {}".format(len(tgt_vocab)))
 
 
 assert len(src_data) == len(tgt_data)
+
+src_data, tgt_data = sort_src_sentence_by_length(list(zip(src_data, tgt_data)))
 
 if args.attention_size:
 
@@ -110,24 +113,8 @@ for i in range(args.epoch):
 
     for j, (input_batch, target_batch) in enumerate(train_loader):
 
-        # output: type: list. (input_length-1, batch_size, vocab_size). ignore the start token
-        # target_batch: (input_length, batch_size)
-        output = s2s(input_batch, target_batch, use_teacher_forcing_list[j])
-
-        batch_loss = torch.zeros(1, device=device)
-
-        for k in range(1, target_batch.size(0)):
-            # tmp_input_batch: (batch_size, vocab_size)
-            # tmp_target_batch: (batch_size, )
-            tmp_output_batch = output[k-1]
-            tmp_target_batch = target_batch[k]
-            mask = torch.ne(tmp_target_batch, padding_value).float()
-            # tmp_loss: (batch_size, )
-            tmp_loss = criterion(tmp_output_batch, tmp_target_batch)
-
-            tmp_loss *= mask
-
-            batch_loss += torch.sum(tmp_loss)
+        batch_loss = s2s.train_batch(input_batch, target_batch, padding_value, criterion,
+                                            use_teacher_forcing_list[j])
 
         epoch_loss += batch_loss.item()
 

@@ -1,15 +1,15 @@
 python -u -m trainer.train \
-    --device cuda:2 \
-    --src_language combine \
+    --device cuda:3 \
+    --src_language spa \
     --tgt_language en \
-    --src_path /data/rrjin/corpus_data/ted_data/src_combine_train_bpe_32000.txt \
-    --tgt_path /data/rrjin/corpus_data/ted_data/tgt_en_train_bpe_32000.txt \
-    --src_vocab_path /data/rrjin/NMT/data/src_combine.vocab \
-    --tgt_vocab_path /data/rrjin/NMT/data/tgt_en.vocab \
+    --src_path /data/rrjin/NMT/tmpdata/train_src.spa \
+    --tgt_path /data/rrjin/NMT/tmpdata/train_tgt.en \
+    --src_vocab_path /data/rrjin/NMT/tmpdata/src.spa.vocab \
+    --tgt_vocab_path /data/rrjin/NMT/tmpdata/tgt.en.vocab \
     --rnn_type lstm \
     --embedding_size 512 \
     --hidden_size 512 \
     --num_layers 3 \
-    --checkpoint /data/rrjin/NMT/data/models/lstm_bpe_32000 \
+    --checkpoint /data/rrjin/NMT/tmpdata/model_basic_lstm \
     --batch_size 32 \
     --dropout 0.1

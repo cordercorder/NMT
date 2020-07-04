@@ -33,7 +33,6 @@ class BahdanauAttention(nn.Module):
         ht = torch.transpose(ht, 0, 1)
 
         # hs: (batch_size, num_layers, hidden_size)
-
         hs = torch.transpose(hs, 0, 1)
 
         # hs: (batch_size, 1, num_layers * hidden_size)
@@ -159,11 +158,12 @@ class AttentionDecoder(nn.Module):
 
         self.fc = nn.Linear(self.hidden_size, vocab_size)
 
-    def decode_batch(self, decoder_input, decoder_hidden_state, encoder_output):
+    def decode_batch(self, decoder_input, decoder_hidden_state, encoder_output, return_attention_weight=False):
         """
         :param decoder_input: (1, batch_size)
         :param decoder_hidden_state: (num_layers, batch_size, hidden_size)
         :param encoder_output: (input_length, batch_size, num_directions * hidden_size)
+        :param return_attention_weight: whether return attention weight or not. default False
         """
         # decoder_input: (1, batch_size, embedding_size)
         decoder_input = self.embedding(decoder_input)
@@ -198,6 +198,9 @@ class AttentionDecoder(nn.Module):
 
         # output: (1, batch_size, vocab_size)
         output = self.fc(output)
+
+        if return_attention_weight:
+            return output, hidden_state, attention_weights
 
         return output, hidden_state
 
@@ -294,3 +297,25 @@ class S2S(nn.Module):
                                       use_teacher_forcing)
 
         return decoder_output
+
+    def train_batch(self, input_batch, target_batch, padding_value, criterion, use_teacher_forcing):
+
+        output = self(input_batch, target_batch, use_teacher_forcing)
+
+        batch_loss = torch.zeros(1, device=input_batch.device)
+
+        for k in range(1, target_batch.size(0)):
+            # tmp_output_batch: (batch_size, vocab_size)
+            # tmp_target_batch: (batch_size, )
+            tmp_output_batch = output[k - 1]
+            tmp_target_batch = target_batch[k]
+
+            mask = torch.ne(tmp_target_batch, padding_value).float()
+            # tmp_loss: (batch_size, )
+            tmp_loss = criterion(tmp_output_batch, tmp_target_batch)
+
+            tmp_loss *= mask
+
+            batch_loss += torch.sum(tmp_loss)
+
+        return batch_loss
