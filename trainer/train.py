@@ -123,7 +123,7 @@ for i in range(args.epoch):
         optimizer.step()
         steps += 1
 
-        batch_word_count = sum(len(target_sent) for target_sent in target_batch)
+        batch_word_count = target_batch.size(0) * target_batch.size(1)
 
         word_count += batch_word_count
 

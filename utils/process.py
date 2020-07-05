@@ -59,62 +59,123 @@ def sort_src_sentence_by_length(data):
     return src_data, tgt_data
 
 
-def save_model(s2s_model, attention):
+def save_model(s2s_model, attention, multi_gpu=False):
 
     if attention:
-        return {
-            "model_dict": s2s_model.state_dict(),
-            "encoder": {
-                "rnn_type": s2s_model.encoder.rnn_type,
-                "vocab_size": s2s_model.encoder.vocab_size,
-                "embedding_size": s2s_model.encoder.embedding_size,
-                "hidden_size": s2s_model.encoder.hidden_size,
-                "num_layers": s2s_model.encoder.num_layers,
-                "dropout_": s2s_model.encoder.dropout_,
-                "bidirectional_": s2s_model.encoder.bidirectional_
-            },
-            "attention":{
-                "hidden_size1": s2s_model.decoder.attention.hidden_size1,
-                "hidden_size2": s2s_model.decoder.attention.hidden_size2,
-                "attention_size": s2s_model.decoder.attention.attention_size
-            },
-            "decoder": {
-                "rnn_type": s2s_model.decoder.rnn_type,
-                "vocab_size": s2s_model.decoder.vocab_size,
-                "embedding_size": s2s_model.decoder.embedding_size,
-                "input_size": s2s_model.decoder.input_size,
-                "hidden_size": s2s_model.decoder.hidden_size,
-                "num_layers": s2s_model.decoder.num_layers,
-                "dropout_": s2s_model.decoder.dropout_
-            }
+        if multi_gpu:
+            return {
+                "model_dict": s2s_model.state_dict(),
+                "encoder": {
+                    "rnn_type": s2s_model.module.encoder.rnn_type,
+                    "vocab_size": s2s_model.module.encoder.vocab_size,
+                    "embedding_size": s2s_model.module.encoder.embedding_size,
+                    "hidden_size": s2s_model.module.encoder.hidden_size,
+                    "num_layers": s2s_model.module.encoder.num_layers,
+                    "dropout_": s2s_model.module.encoder.dropout_,
+                    "bidirectional_": s2s_model.module.encoder.bidirectional_
+                },
+                "attention":{
+                    "hidden_size1": s2s_model.module.decoder.attention.hidden_size1,
+                    "hidden_size2": s2s_model.module.decoder.attention.hidden_size2,
+                    "attention_size": s2s_model.module.decoder.attention.attention_size
+                },
+                "decoder": {
+                    "rnn_type": s2s_model.module.decoder.rnn_type,
+                    "vocab_size": s2s_model.module.decoder.vocab_size,
+                    "embedding_size": s2s_model.module.decoder.embedding_size,
+                    "input_size": s2s_model.module.decoder.input_size,
+                    "hidden_size": s2s_model.module.decoder.hidden_size,
+                    "num_layers": s2s_model.module.decoder.num_layers,
+                    "dropout_": s2s_model.module.decoder.dropout_
+                }
         }
 
+        else:
+            return {
+                "model_dict": s2s_model.state_dict(),
+                "encoder": {
+                    "rnn_type": s2s_model.encoder.rnn_type,
+                    "vocab_size": s2s_model.encoder.vocab_size,
+                    "embedding_size": s2s_model.encoder.embedding_size,
+                    "hidden_size": s2s_model.encoder.hidden_size,
+                    "num_layers": s2s_model.encoder.num_layers,
+                    "dropout_": s2s_model.encoder.dropout_,
+                    "bidirectional_": s2s_model.encoder.bidirectional_
+                },
+                "attention": {
+                    "hidden_size1": s2s_model.decoder.attention.hidden_size1,
+                    "hidden_size2": s2s_model.decoder.attention.hidden_size2,
+                    "attention_size": s2s_model.decoder.attention.attention_size
+                },
+                "decoder": {
+                    "rnn_type": s2s_model.decoder.rnn_type,
+                    "vocab_size": s2s_model.decoder.vocab_size,
+                    "embedding_size": s2s_model.decoder.embedding_size,
+                    "input_size": s2s_model.decoder.input_size,
+                    "hidden_size": s2s_model.decoder.hidden_size,
+                    "num_layers": s2s_model.decoder.num_layers,
+                    "dropout_": s2s_model.decoder.dropout_
+                }
+            }
     else:
-        return {
-            "model_dict": s2s_model.state_dict(),
-            "encoder":{
-                "rnn_type": s2s_model.encoder.rnn_type,
-                "vocab_size": s2s_model.encoder.vocab_size,
-                "embedding_size": s2s_model.encoder.embedding_size,
-                "hidden_size": s2s_model.encoder.hidden_size,
-                "num_layers": s2s_model.encoder.num_layers,
-                "dropout_": s2s_model.encoder.dropout_,
-                "bidirectional_": s2s_model.encoder.bidirectional_
-            },
-            "decoder":{
-                "rnn_type": s2s_model.decoder.rnn_type,
-                "vocab_size": s2s_model.decoder.vocab_size,
-                "embedding_size": s2s_model.decoder.embedding_size,
-                "hidden_size": s2s_model.decoder.hidden_size,
-                "num_layers": s2s_model.decoder.num_layers,
-                "dropout_": s2s_model.decoder.dropout_
+        if multi_gpu:
+            return {
+                "model_dict": s2s_model.state_dict(),
+                "encoder":{
+                    "rnn_type": s2s_model.module.encoder.rnn_type,
+                    "vocab_size": s2s_model.module.encoder.vocab_size,
+                    "embedding_size": s2s_model.module.encoder.embedding_size,
+                    "hidden_size": s2s_model.module.encoder.hidden_size,
+                    "num_layers": s2s_model.module.encoder.num_layers,
+                    "dropout_": s2s_model.module.encoder.dropout_,
+                    "bidirectional_": s2s_model.module.encoder.bidirectional_
+                },
+                "decoder":{
+                    "rnn_type": s2s_model.module.decoder.rnn_type,
+                    "vocab_size": s2s_model.module.decoder.vocab_size,
+                    "embedding_size": s2s_model.module.decoder.embedding_size,
+                    "hidden_size": s2s_model.module.decoder.hidden_size,
+                    "num_layers": s2s_model.module.decoder.num_layers,
+                    "dropout_": s2s_model.module.decoder.dropout_
+                }
             }
-        }
+        else:
+            return {
+                "model_dict": s2s_model.state_dict(),
+                "encoder": {
+                    "rnn_type": s2s_model.encoder.rnn_type,
+                    "vocab_size": s2s_model.encoder.vocab_size,
+                    "embedding_size": s2s_model.encoder.embedding_size,
+                    "hidden_size": s2s_model.encoder.hidden_size,
+                    "num_layers": s2s_model.encoder.num_layers,
+                    "dropout_": s2s_model.encoder.dropout_,
+                    "bidirectional_": s2s_model.encoder.bidirectional_
+                },
+                "decoder": {
+                    "rnn_type": s2s_model.decoder.rnn_type,
+                    "vocab_size": s2s_model.decoder.vocab_size,
+                    "embedding_size": s2s_model.decoder.embedding_size,
+                    "hidden_size": s2s_model.decoder.hidden_size,
+                    "num_layers": s2s_model.decoder.num_layers,
+                    "dropout_": s2s_model.decoder.dropout_
+                }
+            }
 
-
-def load_model(model_path):
+def load_model(model_path, multi_gpu=False):
 
     model_ckpt = torch.load(model_path, map_location="cpu")
+
+    if multi_gpu:
+        # remove module.
+        from collections import OrderedDict
+
+        new_model_dict = OrderedDict()
+
+        for k, v in model_ckpt["model_dict"].items():
+            name_key = k[7:]
+            new_model_dict[name_key] = v
+
+        model_ckpt["model_dict"] = new_model_dict
 
     if "attention" in model_ckpt:
 

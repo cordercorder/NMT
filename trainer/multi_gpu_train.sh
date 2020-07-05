@@ -1,4 +1,4 @@
-python -m torch.distributed.launch --nproc_per_node=3 multi_gpu_train.py -u \
+python -m torch.distributed.launch --nproc_per_node=3 multi_gpu_train.py \
     --device_id 1 2 3 \
     --src_language spa \
     --tgt_language en \
@@ -10,6 +10,7 @@ python -m torch.distributed.launch --nproc_per_node=3 multi_gpu_train.py -u \
     --embedding_size 512 \
     --hidden_size 512 \
     --num_layers 3 \
-    --checkpoint /data/rrjin/NMT/tmpdata/model_basic_multi_gpu_lstm \
+    --checkpoint /data/rrjin/NMT/tmpdata/model_attention_multi_gpu_lstm \
     --batch_size 32 \
-    --dropout 0.1
+    --dropout 0.1 \
+    --attention_size 512

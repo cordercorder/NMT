@@ -64,8 +64,6 @@ torch.distributed.init_process_group(backend="nccl")
 local_rank = torch.distributed.get_rank()
 device = torch.device("cuda", local_rank)
 
-print(local_rank)
-
 assert len(src_data) == len(tgt_data)
 
 src_data, tgt_data = sort_src_sentence_by_length(list(zip(src_data, tgt_data)))
@@ -148,7 +146,7 @@ for i in range(args.epoch):
 
         if steps % save_model_steps == 0:
             if local_rank == 0:
-                torch.save(save_model(s2s, args.attention_size), args.checkpoint + "_" + str(i) + "_" + str(steps))
+                torch.save(save_model(s2s, args.attention_size, multi_gpu=True), args.checkpoint + "_" + str(i) + "_" + str(steps))
             batch_loss_value = batch_loss.item()
             ppl = math.exp(batch_loss_value / batch_word_count)
             print("Batch loss: {}, batch perplexity: {}, local rank: {}".format(batch_loss_value, ppl, local_rank))
@@ -156,6 +154,6 @@ for i in range(args.epoch):
 
     epoch_loss /= word_count
     if local_rank == 0:
-        torch.save(save_model(s2s, args.attention_size), args.checkpoint + "__{}_{:.6f}".format(i, epoch_loss))
+        torch.save(save_model(s2s, args.attention_size, multi_gpu=True), args.checkpoint + "__{}_{:.6f}".format(i, epoch_loss))
     print("Epoch: {}, time: {} seconds, loss: {}, local rank: {}".format(i, time.time() - start_time, epoch_loss,
                                                                          local_rank))

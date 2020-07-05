@@ -20,12 +20,13 @@ parser.add_argument("--tgt_vocab_path", required=True)
 parser.add_argument("--translation_output", required=True)
 
 parser.add_argument("--beam_size", default=3, type=int)
+parser.add_argument("--multi_gpu", default=False, type=bool)
 
 args, unknown = parser.parse_known_args()
 
 device = args.device
 
-s2s = (load_model(args.load)).to(device)
+s2s = (load_model(args.load, args.multi_gpu)).to(device)
 
 if isinstance(s2s, S2S_basic.S2S):
     print("Basic Model!")
