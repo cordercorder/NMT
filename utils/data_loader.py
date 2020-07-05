@@ -56,20 +56,11 @@ def pad_data(data, padding_value, device):
     return torch.tensor(data_tensor, device=device)
 
 
-def batch_data(src_data, tgt_data, train_order, batch_size, padding_value, device):
-
-    for order in train_order:
-
-        tmp_src_data = src_data[order:order+batch_size]
-        tmp_tgt_data = tgt_data[order:order+batch_size]
-
-        yield pad_data(tmp_src_data, padding_value, device), pad_data(tmp_tgt_data, padding_value, device)
-
 def collate(batch, padding_value, device):
 
     src_batch, tgt_batch = zip(*batch)
-    src_batch_tensor = pad_data(src_batch, padding_value, device=device)
-    tgt_batch_tensor = pad_data(tgt_batch, padding_value, device=device)
+    src_batch_tensor = pad_data(src_batch, padding_value, device)
+    tgt_batch_tensor = pad_data(tgt_batch, padding_value, device)
 
     return src_batch_tensor, tgt_batch_tensor
 

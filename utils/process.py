@@ -1,5 +1,7 @@
 import unicodedata
 import re
+from models import S2S_attention, S2S_basic
+import torch
 
 
 def unicodeToAscii(s):
@@ -55,6 +57,79 @@ def sort_src_sentence_by_length(data):
 
     src_data, tgt_data = list(zip(*data))
     return src_data, tgt_data
+
+
+def save_model(s2s_model, attention):
+
+    if attention:
+        return {
+            "model_dict": s2s_model.state_dict(),
+            "encoder": {
+                "rnn_type": s2s_model.encoder.rnn_type,
+                "vocab_size": s2s_model.encoder.vocab_size,
+                "embedding_size": s2s_model.encoder.embedding_size,
+                "hidden_size": s2s_model.encoder.hidden_size,
+                "num_layers": s2s_model.encoder.num_layers,
+                "dropout_": s2s_model.encoder.dropout_,
+                "bidirectional_": s2s_model.encoder.bidirectional_
+            },
+            "attention":{
+                "hidden_size1": s2s_model.decoder.attention.hidden_size1,
+                "hidden_size2": s2s_model.decoder.attention.hidden_size2,
+                "attention_size": s2s_model.decoder.attention.attention_size
+            },
+            "decoder": {
+                "rnn_type": s2s_model.decoder.rnn_type,
+                "vocab_size": s2s_model.decoder.vocab_size,
+                "embedding_size": s2s_model.decoder.embedding_size,
+                "input_size": s2s_model.decoder.input_size,
+                "hidden_size": s2s_model.decoder.hidden_size,
+                "num_layers": s2s_model.decoder.num_layers,
+                "dropout_": s2s_model.decoder.dropout_
+            }
+        }
+
+    else:
+        return {
+            "model_dict": s2s_model.state_dict(),
+            "encoder":{
+                "rnn_type": s2s_model.encoder.rnn_type,
+                "vocab_size": s2s_model.encoder.vocab_size,
+                "embedding_size": s2s_model.encoder.embedding_size,
+                "hidden_size": s2s_model.encoder.hidden_size,
+                "num_layers": s2s_model.encoder.num_layers,
+                "dropout_": s2s_model.encoder.dropout_,
+                "bidirectional_": s2s_model.encoder.bidirectional_
+            },
+            "decoder":{
+                "rnn_type": s2s_model.decoder.rnn_type,
+                "vocab_size": s2s_model.decoder.vocab_size,
+                "embedding_size": s2s_model.decoder.embedding_size,
+                "hidden_size": s2s_model.decoder.hidden_size,
+                "num_layers": s2s_model.decoder.num_layers,
+                "dropout_": s2s_model.decoder.dropout_
+            }
+        }
+
+
+def load_model(model_path):
+
+    model_ckpt = torch.load(model_path, map_location="cpu")
+
+    if "attention" in model_ckpt:
+
+        encoder = S2S_attention.Encoder(**model_ckpt["encoder"])
+        attention = S2S_attention.BahdanauAttention(**model_ckpt["attention"])
+        decoder = S2S_attention.AttentionDecoder(**model_ckpt["decoder"], attention=attention)
+        s2s = S2S_attention.S2S(encoder, decoder)
+
+    else:
+
+        encoder = S2S_basic.Encoder(**model_ckpt["encoder"])
+        decoder = S2S_basic.Decoder(**model_ckpt["decoder"])
+        s2s = S2S_basic.S2S(encoder, decoder)
+    s2s.load_state_dict(model_ckpt["model_dict"])
+    return s2s
 
 
 if __name__ == "__main__":

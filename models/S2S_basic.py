@@ -26,7 +26,7 @@ class Encoder(nn.Module):
         self.embedding_size = embedding_size
         self.hidden_size = hidden_size
         self.num_layers = num_layers
-        self.drop_out_ = dropout_
+        self.dropout_ = dropout_
         self.bidirectional_ = bidirectional_
 
         if rnn_type != "gru" and rnn_type != "rnn" and rnn_type != "lstm":
@@ -82,7 +82,7 @@ class Decoder(nn.Module):
         self.embedding_size = embedding_size
         self.hidden_size = hidden_size
         self.num_layers = num_layers
-        self.drop_out_ = dropout_
+        self.dropout_ = dropout_
 
         if rnn_type != "gru" and rnn_type != "rnn" and rnn_type != "lstm":
             raise Exception("Unknown type of rnn")

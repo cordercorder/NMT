@@ -1,5 +1,5 @@
-python -u -m trainer.train \
-    --device cuda:3 \
+python -m torch.distributed.launch --nproc_per_node=3 multi_gpu_train.py -u \
+    --device_id 1 2 3 \
     --src_language spa \
     --tgt_language en \
     --src_path /data/rrjin/NMT/tmpdata/train_src.spa \
@@ -10,7 +10,6 @@ python -u -m trainer.train \
     --embedding_size 512 \
     --hidden_size 512 \
     --num_layers 3 \
-    --checkpoint /data/rrjin/NMT/tmpdata/model_attention_lstm \
-    --batch_size 64 \
-    --dropout 0.1 \
-    --attention_size 512
+    --checkpoint /data/rrjin/NMT/tmpdata/model_basic_multi_gpu_lstm \
+    --batch_size 32 \
+    --dropout 0.1

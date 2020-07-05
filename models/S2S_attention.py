@@ -15,6 +15,10 @@ class BahdanauAttention(nn.Module):
 
         super(BahdanauAttention, self).__init__()
 
+        self.hidden_size1 = hidden_size1
+        self.hidden_size2 = hidden_size2
+        self.attention_size = attention_size
+
         self.W1 = nn.Linear(hidden_size1, attention_size)
         self.W2 = nn.Linear(hidden_size2, attention_size)
 
@@ -82,7 +86,7 @@ class Encoder(nn.Module):
         self.embedding_size = embedding_size
         self.hidden_size = hidden_size
         self.num_layers = num_layers
-        self.drop_out_ = dropout_
+        self.dropout_ = dropout_
         self.bidirectional_ = bidirectional_
 
         if rnn_type != "gru" and rnn_type != "rnn" and rnn_type != "lstm":
@@ -139,10 +143,11 @@ class AttentionDecoder(nn.Module):
         self.rnn_type = rnn_type
         self.vocab_size = vocab_size
         self.embedding_size = embedding_size
+        self.input_size = input_size
         self.hidden_size = hidden_size
         self.num_layers = num_layers
         self.attention = attention
-        self.drop_out_ = dropout_
+        self.dropout_ = dropout_
 
         if rnn_type != "gru" and rnn_type != "rnn" and rnn_type != "lstm":
             raise Exception("Unknown type of rnn")

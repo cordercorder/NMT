@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 import argparse
 from utils.Vocab import Vocab
-from utils.process import normalizeString
+from utils.process import normalizeString, load_model
 from models import S2S_attention
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -38,7 +38,7 @@ args, unknown = parser.parse_known_args()
 
 device = args.device
 
-s2s = (torch.load(args.load)).to(device)
+s2s = (load_model(args.load)).to(device)
 
 if not isinstance(s2s, S2S_attention.S2S):
 
@@ -60,7 +60,7 @@ with torch.no_grad():
 
         data = f.read().split("\n")
 
-        for line in data:
+        for i, line in enumerate(data):
 
             line = " ".join([src_vocab.start_token, normalizeString(line), src_vocab.end_token])
 
@@ -108,7 +108,7 @@ with torch.no_grad():
 
             pred_line = []
 
-            for i in range(max_length):
+            for j in range(max_length):
 
                 # atten: (batch_size, input_length, 1)
                 decoder_output, decoder_hidden_state, atten = s2s.decoder.decode_batch(decoder_input, decoder_hidden_state,
@@ -128,12 +128,12 @@ with torch.no_grad():
 
                 atten = atten.view(-1)
 
-                attention_weight[i] = atten
+                attention_weight[j] = atten
 
             attention_weight = attention_weight[:len(pred_line)]
 
-            plot_attention(attention_weight, line.split(), pred_line, args.picture_path)
+            plot_attention(attention_weight, line.split(), pred_line, args.picture_path + str(i) + ".jpg")
 
-            print(line)
-            print(" ".join(pred_line))
-            print()
+            print("Source sentence: {}".format(line))
+            print("Reference: {}".format(tgt_data[i]))
+            print("Predict: {}".format(" ".join(pred_line)))

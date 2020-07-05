@@ -1,3 +1,6 @@
+import sys
+sys.path.append("../")
+
 import argparse
 import torch
 import torch.nn as nn
@@ -9,10 +12,12 @@ from utils.process import sort_src_sentence_by_length, save_model
 import random
 import time
 import math
+import os
+
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("--device", required=True)
+parser.add_argument("--device_id", nargs="+")
 parser.add_argument("--src_language", required=True)
 parser.add_argument("--tgt_language", required=True)
 parser.add_argument("--src_path", required=True)
@@ -43,8 +48,6 @@ parser.add_argument("--mask_token", default="<mask>")
 
 args, unknown = parser.parse_known_args()
 
-device = torch.device(args.device)
-
 src_data, src_vocab = load_corpus_data(args.src_path, args.src_language, args.start_token, args.end_token,
                                        args.mask_token, args.src_vocab_path, args.unk, args.threshold)
 
@@ -54,6 +57,14 @@ tgt_data, tgt_vocab = load_corpus_data(args.tgt_path, args.tgt_language, args.st
 print("Source language vocab size: {}".format(len(src_vocab)))
 print("Target language vocab size: {}".format(len(tgt_vocab)))
 
+os.environ["CUDA_VISIBLE_DEVICES"]=",".join(str(idx) for idx in args.device_id)
+
+torch.distributed.init_process_group(backend="nccl")
+
+local_rank = torch.distributed.get_rank()
+device = torch.device("cuda", local_rank)
+
+print(local_rank)
 
 assert len(src_data) == len(tgt_data)
 
@@ -85,6 +96,10 @@ else:
 
     s2s = S2S_basic.S2S(encoder, decoder).to(device)
 
+s2s = nn.parallel.DistributedDataParallel(s2s, device_ids=[local_rank])
+
+print("Multi Gpu training: {}".format(local_rank))
+
 optimizer = torch.optim.Adam(s2s.parameters(), args.learning_rate)
 
 criterion = nn.CrossEntropyLoss(reduction="none")
@@ -94,7 +109,11 @@ padding_value = src_vocab.get_index(args.mask_token)
 assert padding_value == tgt_vocab.get_index(args.mask_token)
 
 train_data = NMTDataset(src_data, tgt_data)
-train_loader = DataLoader(train_data, args.batch_size, shuffle=True, collate_fn=lambda batch: collate(batch, padding_value, device))
+
+train_sampler = torch.utils.data.distributed.DistributedSampler(train_data)
+
+train_loader = DataLoader(train_data, args.batch_size, shuffle=False, sampler=train_sampler,
+                          collate_fn=lambda batch: collate(batch, padding_value, device), drop_last=True)
 
 STEPS = len(range(0, len(src_data), args.batch_size))
 save_model_steps = max(int(STEPS * args.save_model_steps), 1)
@@ -113,8 +132,8 @@ for i in range(args.epoch):
 
     for j, (input_batch, target_batch) in enumerate(train_loader):
 
-        batch_loss = s2s.train_batch(input_batch, target_batch, padding_value, criterion,
-                                     use_teacher_forcing_list[j])
+        batch_loss = s2s.module.train_batch(input_batch, target_batch, padding_value, criterion,
+                                            use_teacher_forcing_list[j])
 
         epoch_loss += batch_loss.item()
 
@@ -123,19 +142,20 @@ for i in range(args.epoch):
         optimizer.step()
         steps += 1
 
-        batch_word_count = sum(len(target_sent) for target_sent in target_batch)
+        batch_word_count = target_batch.size(0) * target_batch.size(1)
 
         word_count += batch_word_count
 
         if steps % save_model_steps == 0:
-            
-            torch.save(save_model(s2s, args.attention_size), args.checkpoint + "_" + str(i) + "_" + str(steps))
+            if local_rank == 0:
+                torch.save(save_model(s2s, args.attention_size), args.checkpoint + "_" + str(i) + "_" + str(steps))
             batch_loss_value = batch_loss.item()
             ppl = math.exp(batch_loss_value / batch_word_count)
-            print("Batch loss: {}, batch perplexity: {}".format(batch_loss_value, ppl))
+            print("Batch loss: {}, batch perplexity: {}, local rank: {}".format(batch_loss_value, ppl, local_rank))
 
 
     epoch_loss /= word_count
-
-    torch.save(save_model(s2s, args.attention_size), args.checkpoint + "__{}_{:.6f}".format(i, epoch_loss))
-    print("Epoch: {}, time: {} seconds, loss: {}".format(i, time.time() - start_time, epoch_loss))
+    if local_rank == 0:
+        torch.save(save_model(s2s, args.attention_size), args.checkpoint + "__{}_{:.6f}".format(i, epoch_loss))
+    print("Epoch: {}, time: {} seconds, loss: {}, local rank: {}".format(i, time.time() - start_time, epoch_loss,
+                                                                         local_rank))

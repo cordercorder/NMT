@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 import argparse
 from utils.Vocab import Vocab
-from utils.process import normalizeString
+from utils.process import normalizeString, load_model
 from nltk.translate.bleu_score import corpus_bleu
 from utils.Hypothesis import Hypothesis
 from models import S2S_attention, S2S_basic
@@ -25,7 +25,7 @@ args, unknown = parser.parse_known_args()
 
 device = args.device
 
-s2s = (torch.load(args.load)).to(device)
+s2s = (load_model(args.load)).to(device)
 
 if isinstance(s2s, S2S_basic.S2S):
     print("Basic Model!")
@@ -114,9 +114,9 @@ with torch.no_grad():
         pred_list = [None] * args.beam_size
         decoder_hidden_state_list = [None] * args.beam_size
 
-        import time
-
-        start_time = time.time()
+        # import time
+        #
+        # start_time = time.time()
 
         while len(hypothesis_list) > 0:
 
@@ -191,7 +191,7 @@ with torch.no_grad():
 
             hypothesis_list = new_hypothesis_list
 
-        print("Time: {} seconds".format(time.time() - start_time))
+        # print("Time: {} seconds".format(time.time() - start_time))
 
         max_score_id = 0
         for i in range(len(complete_hypothesis_list)):
