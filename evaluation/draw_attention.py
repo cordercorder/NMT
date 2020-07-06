@@ -34,13 +34,12 @@ parser.add_argument("--src_vocab_path", required=True)
 parser.add_argument("--tgt_vocab_path", required=True)
 parser.add_argument("--picture_path", required=True)
 
-parser.add_argument("--multi_gpu", default=False, type=bool)
 
 args, unknown = parser.parse_known_args()
 
 device = args.device
 
-s2s = (load_model(args.load, args.multi_gpu)).to(device)
+s2s = (load_model(args.load)).to(device)
 
 if not isinstance(s2s, S2S_attention.S2S):
 

@@ -59,7 +59,7 @@ def sort_src_sentence_by_length(data):
     return src_data, tgt_data
 
 
-def save_model(s2s_model, attention, multi_gpu=False):
+def save_model(s2s_model, attention, optimizer, args, multi_gpu=False):
 
     if attention:
         if multi_gpu:
@@ -87,7 +87,9 @@ def save_model(s2s_model, attention, multi_gpu=False):
                     "hidden_size": s2s_model.module.decoder.hidden_size,
                     "num_layers": s2s_model.module.decoder.num_layers,
                     "dropout_": s2s_model.module.decoder.dropout_
-                }
+                },
+                "optimizer_state_dict": optimizer.state_dict(),
+                "args": args
         }
 
         else:
@@ -115,7 +117,9 @@ def save_model(s2s_model, attention, multi_gpu=False):
                     "hidden_size": s2s_model.decoder.hidden_size,
                     "num_layers": s2s_model.decoder.num_layers,
                     "dropout_": s2s_model.decoder.dropout_
-                }
+                },
+                "optimizer_state_dict": optimizer.state_dict(),
+                "args": args
             }
     else:
         if multi_gpu:
@@ -137,7 +141,9 @@ def save_model(s2s_model, attention, multi_gpu=False):
                     "hidden_size": s2s_model.module.decoder.hidden_size,
                     "num_layers": s2s_model.module.decoder.num_layers,
                     "dropout_": s2s_model.module.decoder.dropout_
-                }
+                },
+                "optimizer_state_dict": optimizer.state_dict(),
+                "args": args
             }
         else:
             return {
@@ -158,16 +164,23 @@ def save_model(s2s_model, attention, multi_gpu=False):
                     "hidden_size": s2s_model.decoder.hidden_size,
                     "num_layers": s2s_model.decoder.num_layers,
                     "dropout_": s2s_model.decoder.dropout_
-                }
+                },
+                "optimizer_state_dict": optimizer.state_dict(),
+                "args": args
             }
 
-def load_model(model_path, multi_gpu=False):
+def load_model(model_path, training=False):
 
     model_ckpt = torch.load(model_path, map_location="cpu")
 
-    if multi_gpu:
-        # remove module.
-        from collections import OrderedDict
+    # remove module.
+    from collections import OrderedDict
+
+    it = iter(model_ckpt["model_dict"])
+
+    first_key = next(it)
+
+    if "module" in first_key:
 
         new_model_dict = OrderedDict()
 
@@ -190,6 +203,18 @@ def load_model(model_path, multi_gpu=False):
         decoder = S2S_basic.Decoder(**model_ckpt["decoder"])
         s2s = S2S_basic.S2S(encoder, decoder)
     s2s.load_state_dict(model_ckpt["model_dict"])
+
+    if training:
+
+        # load for training
+
+        args = model_ckpt["args"]
+        optimizer = torch.optim.Adam(s2s.parameters(),args.learning_rate)
+
+        optimizer.load_state_dict(model_ckpt["optimizer_state_dict"])
+
+        return s2s, optimizer, args
+
     return s2s
 
 

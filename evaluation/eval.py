@@ -20,13 +20,16 @@ parser.add_argument("--tgt_vocab_path", required=True)
 parser.add_argument("--translation_output", required=True)
 
 parser.add_argument("--beam_size", default=3, type=int)
-parser.add_argument("--multi_gpu", default=False, type=bool)
 
 args, unknown = parser.parse_known_args()
 
 device = args.device
 
-s2s = (load_model(args.load, args.multi_gpu)).to(device)
+s2s = (load_model(args.load)).to(device)
+
+print("Load from: {}".format(args.load))
+
+print("Output is: {}".format(args.translation_output))
 
 if isinstance(s2s, S2S_basic.S2S):
     print("Basic Model!")
@@ -81,7 +84,7 @@ with torch.no_grad():
         encoder_output, encoder_hidden_state = s2s.encoder(inputs)
 
         # decoder_input: (1, 1)
-        decoder_input = torch.tensor([[src_vocab.get_index(src_vocab.start_token)]], device=device)
+        decoder_input = torch.tensor([[tgt_vocab.get_index(tgt_vocab.start_token)]], device=device)
 
         if s2s.encoder.bidirectional_:
 

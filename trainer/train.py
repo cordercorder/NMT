@@ -28,7 +28,7 @@ parser.add_argument("--checkpoint", required=True)
 # use attention or not
 parser.add_argument("--attention_size", type=int)
 
-parser.add_argument("--epoch", default=10)
+parser.add_argument("--epoch", default=10, type=int)
 parser.add_argument("--learning_rate", default=0.001, type=float)
 parser.add_argument("--batch_size", default=32, type=int)
 parser.add_argument("--bidirectional", default=True, type=bool)
@@ -129,7 +129,7 @@ for i in range(args.epoch):
 
         if steps % save_model_steps == 0:
             
-            torch.save(save_model(s2s, args.attention_size), args.checkpoint + "_" + str(i) + "_" + str(steps))
+            torch.save(save_model(s2s, args.attention_size, optimizer, args), args.checkpoint + "_" + str(i) + "_" + str(steps))
             batch_loss_value = batch_loss.item()
             ppl = math.exp(batch_loss_value / batch_word_count)
             print("Batch loss: {}, batch perplexity: {}".format(batch_loss_value, ppl))
@@ -137,5 +137,5 @@ for i in range(args.epoch):
 
     epoch_loss /= word_count
 
-    torch.save(save_model(s2s, args.attention_size), args.checkpoint + "__{}_{:.6f}".format(i, epoch_loss))
+    torch.save(save_model(s2s, args.attention_size, optimizer, args), args.checkpoint + "__{}_{:.6f}".format(i, epoch_loss))
     print("Epoch: {}, time: {} seconds, loss: {}".format(i, time.time() - start_time, epoch_loss))

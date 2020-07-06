@@ -1,2 +1,4 @@
 data/
 .idea/
+trainer/multi_gpu_train_eval.py
+trainer/multi_gpu_train_eval.sh

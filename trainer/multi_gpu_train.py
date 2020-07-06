@@ -8,7 +8,7 @@ from models import S2S_basic
 from models import S2S_attention
 from utils.data_loader import load_corpus_data, NMTDataset, collate
 from torch.utils.data import DataLoader
-from utils.process import sort_src_sentence_by_length, save_model
+from utils.process import sort_src_sentence_by_length, save_model, load_model
 import random
 import time
 import math
@@ -17,7 +17,7 @@ import os
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("--device_id", nargs="+")
+parser.add_argument("--device_id", nargs="+", type=int)
 parser.add_argument("--src_language", required=True)
 parser.add_argument("--tgt_language", required=True)
 parser.add_argument("--src_path", required=True)
@@ -32,8 +32,9 @@ parser.add_argument("--checkpoint", required=True)
 
 # use attention or not
 parser.add_argument("--attention_size", type=int)
+parser.add_argument("--load")
 
-parser.add_argument("--epoch", default=10)
+parser.add_argument("--epoch", default=10, type=int)
 parser.add_argument("--learning_rate", default=0.001, type=float)
 parser.add_argument("--batch_size", default=32, type=int)
 parser.add_argument("--bidirectional", default=True, type=bool)
@@ -57,7 +58,7 @@ tgt_data, tgt_vocab = load_corpus_data(args.tgt_path, args.tgt_language, args.st
 print("Source language vocab size: {}".format(len(src_vocab)))
 print("Target language vocab size: {}".format(len(tgt_vocab)))
 
-os.environ["CUDA_VISIBLE_DEVICES"]=",".join(str(idx) for idx in args.device_id)
+os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(str(idx) for idx in args.device_id)
 
 torch.distributed.init_process_group(backend="nccl")
 
@@ -146,7 +147,8 @@ for i in range(args.epoch):
 
         if steps % save_model_steps == 0:
             if local_rank == 0:
-                torch.save(save_model(s2s, args.attention_size, multi_gpu=True), args.checkpoint + "_" + str(i) + "_" + str(steps))
+                torch.save(save_model(s2s, args.attention_size, optimizer, multi_gpu=True),
+                           args.checkpoint + "_" + str(i) + "_" + str(steps))
             batch_loss_value = batch_loss.item()
             ppl = math.exp(batch_loss_value / batch_word_count)
             print("Batch loss: {}, batch perplexity: {}, local rank: {}".format(batch_loss_value, ppl, local_rank))
@@ -154,6 +156,7 @@ for i in range(args.epoch):
 
     epoch_loss /= word_count
     if local_rank == 0:
-        torch.save(save_model(s2s, args.attention_size, multi_gpu=True), args.checkpoint + "__{}_{:.6f}".format(i, epoch_loss))
+        torch.save(save_model(s2s, args.attention_size, optimizer, multi_gpu=True),
+                   args.checkpoint + "__{}_{:.6f}".format(i, epoch_loss))
     print("Epoch: {}, time: {} seconds, loss: {}, local rank: {}".format(i, time.time() - start_time, epoch_loss,
                                                                          local_rank))
