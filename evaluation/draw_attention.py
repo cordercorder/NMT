@@ -51,7 +51,7 @@ tgt_vocab = Vocab.load(args.tgt_vocab_path)
 with open(args.val_tgt_path) as f:
 
     data = f.read().split("\n")
-    tgt_data = [normalizeString(line) for line in data]
+    tgt_data = [normalizeString(line, to_ascii=False) for line in data]
 
 with torch.no_grad():
 
@@ -63,7 +63,7 @@ with torch.no_grad():
 
         for i, line in enumerate(data):
 
-            line = " ".join([src_vocab.start_token, normalizeString(line), src_vocab.end_token])
+            line = " ".join([src_vocab.start_token, normalizeString(line, to_ascii=False), src_vocab.end_token])
 
             inputs = torch.tensor([src_vocab.get_index(token) for token in line.split()], device=device)
 

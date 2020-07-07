@@ -34,7 +34,8 @@ parser.add_argument("--checkpoint", required=True)
 parser.add_argument("--attention_size", type=int)
 parser.add_argument("--load")
 
-parser.add_argument("--epoch", default=10, type=int)
+parser.add_argument("--start_epoch", default=0, type=int)
+parser.add_argument("--end_epoch", default=10, type=int)
 parser.add_argument("--learning_rate", default=0.001, type=float)
 parser.add_argument("--batch_size", default=32, type=int)
 parser.add_argument("--bidirectional", default=True, type=bool)
@@ -76,6 +77,7 @@ if args.load:
     s2s = nn.parallel.DistributedDataParallel(s2s, device_ids=[local_rank])
     optimizer = torch.optim.Adam(s2s.parameters(), args.learning_rate)
     optimizer.load_state_dict(optimizer_state_dict)
+
 else:
 
     if args.attention_size:
@@ -104,9 +106,8 @@ else:
 
         s2s = S2S_basic.S2S(encoder, decoder).to(device)
 
-        s2s = nn.parallel.DistributedDataParallel(s2s, device_ids=[local_rank])
-
-        optimizer = torch.optim.Adam(s2s.parameters(), args.learning_rate)
+    s2s = nn.parallel.DistributedDataParallel(s2s, device_ids=[local_rank])
+    optimizer = torch.optim.Adam(s2s.parameters(), args.learning_rate)
 
 s2s.train()
 
@@ -128,7 +129,7 @@ train_loader = DataLoader(train_data, args.batch_size, shuffle=False, sampler=tr
 STEPS = len(range(0, len(src_data), args.batch_size))
 save_model_steps = max(int(STEPS * args.save_model_steps), 1)
 
-for i in range(args.epoch):
+for i in range(args.start_epoch, args.end_epoch):
 
     train_sampler.set_epoch(i)
 
@@ -173,3 +174,5 @@ for i in range(args.epoch):
                    args.checkpoint + "__{}_{:.6f}".format(i, epoch_loss))
     print("Epoch: {}, time: {} seconds, loss: {}, local rank: {}".format(i, time.time() - start_time, epoch_loss,
                                                                          local_rank))
+
+torch.save(save_model(s2s, args.attention_size, optimizer, args), args.checkpoint + "_rank{}".format(local_rank))

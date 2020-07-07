@@ -10,8 +10,10 @@ python -m torch.distributed.launch --nproc_per_node=3 multi_gpu_train.py \
     --embedding_size 512 \
     --hidden_size 512 \
     --num_layers 3 \
-    --checkpoint /data/rrjin/NMT/tmpdata/model_basic_multi_gpu_lstm6 \
+    --checkpoint /data/rrjin/NMT/tmpdata/model_attention_multi_gpu_lstm \
     --batch_size 64 \
     --dropout 0.1 \
-    --epoch 1 \
-    --load /data/rrjin/NMT/tmpdata/model_basic_multi_gpu_lstm6__0_2.100440
+    --attention_size 512 \
+    --load /data/rrjin/NMT/tmpdata/model_attention_multi_gpu_lstm__9_0.687496 \
+    --start_epoch 10 \
+    --end_epoch 11

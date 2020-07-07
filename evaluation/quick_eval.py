@@ -36,13 +36,15 @@ def decode_batch(decoder_input, decoder_hidden_state, encoder_output):
         return s2s.decoder.decode_batch(decoder_input, decoder_hidden_state)
 
 
-src_vocab = Vocab.load("/data/rrjin/NMT/tmpdata/src.spa.vocab")
-tgt_vocab = Vocab.load("/data/rrjin/NMT/tmpdata/tgt.en.vocab")
+src_vocab = Vocab.load(args.src_vocab_path)
+tgt_vocab = Vocab.load(args.tgt_vocab_path)
 
 src_data = read_data(args.test_src_path)
 tgt_data = read_data(args.test_tgt_path)
 
 device = args.device
+
+select_model = []
 
 for model_path in glob.glob(args.model_prefix + "*"):
 
@@ -93,7 +95,7 @@ for model_path in glob.glob(args.model_prefix + "*"):
 
         decoder_hidden_state = encoder_hidden_state
 
-        decoder_input = torch.tensor([[tgt_vocab.get_index(tgt_vocab.end_token)]], device=device)
+        decoder_input = torch.tensor([[tgt_vocab.get_index(tgt_vocab.start_token)]], device=device)
 
         max_length = (inputs.size(0) - 2) * 3
 
@@ -142,3 +144,13 @@ for model_path in glob.glob(args.model_prefix + "*"):
         f.write(str(bleu_value))
 
     print(bleu_value)
+
+    select_model.append((model_name, bleu_value))
+
+print("\n")
+
+select_model.sort(key=lambda item: -item[1])
+
+for model_name, bleu_value in select_model:
+
+    print("{}: {}".format(model_name, bleu_value))
