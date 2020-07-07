@@ -69,37 +69,48 @@ assert len(src_data) == len(tgt_data)
 
 src_data, tgt_data = sort_src_sentence_by_length(list(zip(src_data, tgt_data)))
 
-if args.attention_size:
+if args.load:
 
-    print("Attention Model")
-    encoder = S2S_attention.Encoder(args.rnn_type, len(src_vocab), args.embedding_size, args.hidden_size,
-                                    args.num_layers,args.dropout, args.bidirectional)
-    attention = S2S_attention.BahdanauAttention(2 * args.hidden_size if args.bidirectional else args.hidden_size,
-                                                args.num_layers * (2 * args.hidden_size if args.bidirectional
-                                                                   else args.hidden_size),
-                                                args.attention_size)
-    decoder = S2S_attention.AttentionDecoder(args.rnn_type, len(tgt_vocab), args.embedding_size, args.embedding_size +
-                                             (2 * args.hidden_size if args.bidirectional else args.hidden_size),
-                                             2 * args.hidden_size if args.bidirectional else args.hidden_size,
-                                             args.num_layers, attention, args.dropout)
-    s2s = S2S_attention.S2S(encoder, decoder).to(device)
-
+    print("Load existing model from {}".format(args.load))
+    s2s, optimizer_state_dict = load_model(args.load, training=True, device=device)
+    s2s = nn.parallel.DistributedDataParallel(s2s, device_ids=[local_rank])
+    optimizer = torch.optim.Adam(s2s.parameters(), args.learning_rate)
+    optimizer.load_state_dict(optimizer_state_dict)
 else:
-    print("Basic Model")
-    encoder = S2S_basic.Encoder(args.rnn_type, len(src_vocab), args.embedding_size, args.hidden_size, args.num_layers,
-                                args.dropout, args.bidirectional)
 
-    decoder = S2S_basic.Decoder(args.rnn_type, len(tgt_vocab), args.embedding_size,
-                                2 * args.hidden_size if args.bidirectional else args.hidden_size,
-                                args.num_layers, args.dropout)
+    if args.attention_size:
 
-    s2s = S2S_basic.S2S(encoder, decoder).to(device)
+        print("Attention Model")
+        encoder = S2S_attention.Encoder(args.rnn_type, len(src_vocab), args.embedding_size, args.hidden_size,
+                                        args.num_layers,args.dropout, args.bidirectional)
+        attention = S2S_attention.BahdanauAttention(2 * args.hidden_size if args.bidirectional else args.hidden_size,
+                                                    args.num_layers * (2 * args.hidden_size if args.bidirectional
+                                                                       else args.hidden_size),
+                                                    args.attention_size)
+        decoder = S2S_attention.AttentionDecoder(args.rnn_type, len(tgt_vocab), args.embedding_size, args.embedding_size +
+                                                 (2 * args.hidden_size if args.bidirectional else args.hidden_size),
+                                                 2 * args.hidden_size if args.bidirectional else args.hidden_size,
+                                                 args.num_layers, attention, args.dropout)
+        s2s = S2S_attention.S2S(encoder, decoder).to(device)
 
-s2s = nn.parallel.DistributedDataParallel(s2s, device_ids=[local_rank])
+    else:
+        print("Basic Model")
+        encoder = S2S_basic.Encoder(args.rnn_type, len(src_vocab), args.embedding_size, args.hidden_size, args.num_layers,
+                                    args.dropout, args.bidirectional)
+
+        decoder = S2S_basic.Decoder(args.rnn_type, len(tgt_vocab), args.embedding_size,
+                                    2 * args.hidden_size if args.bidirectional else args.hidden_size,
+                                    args.num_layers, args.dropout)
+
+        s2s = S2S_basic.S2S(encoder, decoder).to(device)
+
+        s2s = nn.parallel.DistributedDataParallel(s2s, device_ids=[local_rank])
+
+        optimizer = torch.optim.Adam(s2s.parameters(), args.learning_rate)
+
+s2s.train()
 
 print("Multi Gpu training: {}".format(local_rank))
-
-optimizer = torch.optim.Adam(s2s.parameters(), args.learning_rate)
 
 criterion = nn.CrossEntropyLoss(reduction="none")
 
@@ -118,6 +129,8 @@ STEPS = len(range(0, len(src_data), args.batch_size))
 save_model_steps = max(int(STEPS * args.save_model_steps), 1)
 
 for i in range(args.epoch):
+
+    train_sampler.set_epoch(i)
 
     epoch_loss = 0.0
 
@@ -147,7 +160,7 @@ for i in range(args.epoch):
 
         if steps % save_model_steps == 0:
             if local_rank == 0:
-                torch.save(save_model(s2s, args.attention_size, optimizer, multi_gpu=True),
+                torch.save(save_model(s2s, args.attention_size, optimizer, args),
                            args.checkpoint + "_" + str(i) + "_" + str(steps))
             batch_loss_value = batch_loss.item()
             ppl = math.exp(batch_loss_value / batch_word_count)
@@ -156,7 +169,7 @@ for i in range(args.epoch):
 
     epoch_loss /= word_count
     if local_rank == 0:
-        torch.save(save_model(s2s, args.attention_size, optimizer, multi_gpu=True),
+        torch.save(save_model(s2s, args.attention_size, optimizer, args),
                    args.checkpoint + "__{}_{:.6f}".format(i, epoch_loss))
     print("Epoch: {}, time: {} seconds, loss: {}, local rank: {}".format(i, time.time() - start_time, epoch_loss,
                                                                          local_rank))

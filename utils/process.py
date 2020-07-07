@@ -59,10 +59,10 @@ def sort_src_sentence_by_length(data):
     return src_data, tgt_data
 
 
-def save_model(s2s_model, attention, optimizer, args, multi_gpu=False):
+def save_model(s2s_model, attention, optimizer, args):
 
     if attention:
-        if multi_gpu:
+        if isinstance(s2s_model, torch.nn.parallel.distributed.DistributedDataParallel):
             return {
                 "model_dict": s2s_model.state_dict(),
                 "encoder": {
@@ -122,7 +122,7 @@ def save_model(s2s_model, attention, optimizer, args, multi_gpu=False):
                 "args": args
             }
     else:
-        if multi_gpu:
+        if isinstance(s2s_model, torch.nn.parallel.distributed.DistributedDataParallel):
             return {
                 "model_dict": s2s_model.state_dict(),
                 "encoder":{
@@ -169,18 +169,17 @@ def save_model(s2s_model, attention, optimizer, args, multi_gpu=False):
                 "args": args
             }
 
-def load_model(model_path, training=False):
+def load_model(model_path, training=False, device="cpu"):
 
     model_ckpt = torch.load(model_path, map_location="cpu")
-
-    # remove module.
-    from collections import OrderedDict
 
     it = iter(model_ckpt["model_dict"])
 
     first_key = next(it)
 
     if "module" in first_key:
+        # remove module.
+        from collections import OrderedDict
 
         new_model_dict = OrderedDict()
 
@@ -195,25 +194,23 @@ def load_model(model_path, training=False):
         encoder = S2S_attention.Encoder(**model_ckpt["encoder"])
         attention = S2S_attention.BahdanauAttention(**model_ckpt["attention"])
         decoder = S2S_attention.AttentionDecoder(**model_ckpt["decoder"], attention=attention)
-        s2s = S2S_attention.S2S(encoder, decoder)
+        s2s = S2S_attention.S2S(encoder, decoder).to(device)
 
     else:
 
         encoder = S2S_basic.Encoder(**model_ckpt["encoder"])
         decoder = S2S_basic.Decoder(**model_ckpt["decoder"])
-        s2s = S2S_basic.S2S(encoder, decoder)
+        s2s = S2S_basic.S2S(encoder, decoder).to(device)
+
     s2s.load_state_dict(model_ckpt["model_dict"])
 
     if training:
 
         # load for training
 
-        args = model_ckpt["args"]
-        optimizer = torch.optim.Adam(s2s.parameters(),args.learning_rate)
+        optimizer_state_dict = model_ckpt["optimizer_state_dict"]
 
-        optimizer.load_state_dict(model_ckpt["optimizer_state_dict"])
-
-        return s2s, optimizer, args
+        return s2s, optimizer_state_dict
 
     return s2s
 
