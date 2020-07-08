@@ -307,7 +307,7 @@ class S2S(nn.Module):
 
         output = self(input_batch, target_batch, use_teacher_forcing)
 
-        batch_loss = torch.zeros(1, device=input_batch.device)
+        batch_loss = torch.zeros(target_batch.size(0) - 1, 1, device=input_batch.device)
 
         for k in range(1, target_batch.size(0)):
             # tmp_output_batch: (batch_size, vocab_size)
@@ -316,11 +316,11 @@ class S2S(nn.Module):
             tmp_target_batch = target_batch[k]
 
             mask = torch.ne(tmp_target_batch, padding_value).float()
-            # tmp_loss: (batch_size, )
-            tmp_loss = criterion(tmp_output_batch, tmp_target_batch)
+            # loss: (batch_size, )
+            loss = criterion(tmp_output_batch, tmp_target_batch)
 
-            tmp_loss *= mask
+            loss *= mask
 
-            batch_loss += torch.sum(tmp_loss)
+            batch_loss[k-1] = loss.sum()
 
-        return batch_loss
+        return batch_loss.sum()

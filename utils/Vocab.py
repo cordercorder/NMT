@@ -165,6 +165,11 @@ class Vocab:
         :param load_path: path to load the entity. type: str
         :return: the load entity. type: object
         """
+
+        if not os.path.isfile(load_path):
+            raise Exception("The vocab path do not exit")
+
+
         with open(load_path, "rb") as f:
             entity = pickle.load(f)
             language_name = entity["language_name"]

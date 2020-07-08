@@ -5,7 +5,7 @@ from models import S2S_basic
 from models import S2S_attention
 from utils.data_loader import load_corpus_data, NMTDataset, collate
 from torch.utils.data import DataLoader
-from utils.process import sort_src_sentence_by_length, save_model
+from utils.process import sort_src_sentence_by_length, save_model, load_model
 import random
 import time
 import math
@@ -27,8 +27,10 @@ parser.add_argument("--checkpoint", required=True)
 
 # use attention or not
 parser.add_argument("--attention_size", type=int)
+parser.add_argument("--load")
 
-parser.add_argument("--epoch", default=10, type=int)
+parser.add_argument("--start_epoch", default=0, type=int)
+parser.add_argument("--end_epoch", default=10, type=int)
 parser.add_argument("--learning_rate", default=0.001, type=float)
 parser.add_argument("--batch_size", default=32, type=int)
 parser.add_argument("--bidirectional", default=True, type=bool)
@@ -40,16 +42,19 @@ parser.add_argument("--threshold", default=0, type=int)
 parser.add_argument("--save_model_steps", default=0.3, type=float)
 parser.add_argument("--teacher_forcing_ratio", default=0.5, type=float)
 parser.add_argument("--mask_token", default="<mask>")
+parser.add_argument("--rebuild_vocab", default=True, type=bool)
 
 args, unknown = parser.parse_known_args()
 
 device = torch.device(args.device)
 
 src_data, src_vocab = load_corpus_data(args.src_path, args.src_language, args.start_token, args.end_token,
-                                       args.mask_token, args.src_vocab_path, args.unk, args.threshold)
+                                       args.mask_token, args.src_vocab_path, args.rebuild_vocab, args.unk,
+                                       args.threshold)
 
 tgt_data, tgt_vocab = load_corpus_data(args.tgt_path, args.tgt_language, args.start_token, args.end_token,
-                                       args.mask_token, args.tgt_vocab_path, args.unk, args.threshold)
+                                       args.mask_token, args.tgt_vocab_path, args.rebuild_vocab, args.unk,
+                                       args.threshold)
 
 print("Source language vocab size: {}".format(len(src_vocab)))
 print("Target language vocab size: {}".format(len(tgt_vocab)))
@@ -59,33 +64,40 @@ assert len(src_data) == len(tgt_data)
 
 src_data, tgt_data = sort_src_sentence_by_length(list(zip(src_data, tgt_data)))
 
-if args.attention_size:
-
-    print("Attention Model")
-    encoder = S2S_attention.Encoder(args.rnn_type, len(src_vocab), args.embedding_size, args.hidden_size,
-                                    args.num_layers,args.dropout, args.bidirectional)
-    attention = S2S_attention.BahdanauAttention(2 * args.hidden_size if args.bidirectional else args.hidden_size,
-                                                args.num_layers * (2 * args.hidden_size if args.bidirectional
-                                                                   else args.hidden_size),
-                                                args.attention_size)
-    decoder = S2S_attention.AttentionDecoder(args.rnn_type, len(tgt_vocab), args.embedding_size, args.embedding_size +
-                                             (2 * args.hidden_size if args.bidirectional else args.hidden_size),
-                                             2 * args.hidden_size if args.bidirectional else args.hidden_size,
-                                             args.num_layers, attention, args.dropout)
-    s2s = S2S_attention.S2S(encoder, decoder).to(device)
+if args.load:
+    print("Load existing model from {}".format(args.load))
+    s2s, optimizer_state_dict = load_model(args.load, training=True, device=device)
+    optimizer = torch.optim.Adam(s2s.parameters(), args.learning_rate)
+    optimizer.load_state_dict(optimizer_state_dict)
 
 else:
-    print("Basic Model")
-    encoder = S2S_basic.Encoder(args.rnn_type, len(src_vocab), args.embedding_size, args.hidden_size, args.num_layers,
-                                args.dropout, args.bidirectional)
+    if args.attention_size:
 
-    decoder = S2S_basic.Decoder(args.rnn_type, len(tgt_vocab), args.embedding_size,
-                                2 * args.hidden_size if args.bidirectional else args.hidden_size,
-                                args.num_layers, args.dropout)
+        print("Attention Model")
+        encoder = S2S_attention.Encoder(args.rnn_type, len(src_vocab), args.embedding_size, args.hidden_size,
+                                        args.num_layers,args.dropout, args.bidirectional)
+        attention = S2S_attention.BahdanauAttention(2 * args.hidden_size if args.bidirectional else args.hidden_size,
+                                                    args.num_layers * (2 * args.hidden_size if args.bidirectional
+                                                                       else args.hidden_size),
+                                                    args.attention_size)
+        decoder = S2S_attention.AttentionDecoder(args.rnn_type, len(tgt_vocab), args.embedding_size, args.embedding_size +
+                                                 (2 * args.hidden_size if args.bidirectional else args.hidden_size),
+                                                 2 * args.hidden_size if args.bidirectional else args.hidden_size,
+                                                 args.num_layers, attention, args.dropout)
+        s2s = S2S_attention.S2S(encoder, decoder).to(device)
 
-    s2s = S2S_basic.S2S(encoder, decoder).to(device)
+    else:
+        print("Basic Model")
+        encoder = S2S_basic.Encoder(args.rnn_type, len(src_vocab), args.embedding_size, args.hidden_size, args.num_layers,
+                                    args.dropout, args.bidirectional)
 
-optimizer = torch.optim.Adam(s2s.parameters(), args.learning_rate)
+        decoder = S2S_basic.Decoder(args.rnn_type, len(tgt_vocab), args.embedding_size,
+                                    2 * args.hidden_size if args.bidirectional else args.hidden_size,
+                                    args.num_layers, args.dropout)
+
+        s2s = S2S_basic.S2S(encoder, decoder).to(device)
+
+    optimizer = torch.optim.Adam(s2s.parameters(), args.learning_rate)
 
 criterion = nn.CrossEntropyLoss(reduction="none")
 
@@ -94,12 +106,13 @@ padding_value = src_vocab.get_index(args.mask_token)
 assert padding_value == tgt_vocab.get_index(args.mask_token)
 
 train_data = NMTDataset(src_data, tgt_data)
-train_loader = DataLoader(train_data, args.batch_size, shuffle=True, collate_fn=lambda batch: collate(batch, padding_value, device))
+train_loader = DataLoader(train_data, args.batch_size, shuffle=True,
+                          collate_fn=lambda batch: collate(batch, padding_value, device))
 
 STEPS = len(range(0, len(src_data), args.batch_size))
 save_model_steps = max(int(STEPS * args.save_model_steps), 1)
 
-for i in range(args.epoch):
+for i in range(args.start_epoch, args.end_epoch):
 
     epoch_loss = 0.0
 

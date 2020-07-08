@@ -47,14 +47,17 @@ parser.add_argument("--threshold", default=0, type=int)
 parser.add_argument("--save_model_steps", default=0.3, type=float)
 parser.add_argument("--teacher_forcing_ratio", default=0.5, type=float)
 parser.add_argument("--mask_token", default="<mask>")
+parser.add_argument("--rebuild_vocab", default=True, type=bool)
 
 args, unknown = parser.parse_known_args()
 
 src_data, src_vocab = load_corpus_data(args.src_path, args.src_language, args.start_token, args.end_token,
-                                       args.mask_token, args.src_vocab_path, args.unk, args.threshold)
+                                       args.mask_token, args.src_vocab_path, args.rebuild_vocab, args.unk,
+                                       args.threshold)
 
 tgt_data, tgt_vocab = load_corpus_data(args.tgt_path, args.tgt_language, args.start_token, args.end_token,
-                                       args.mask_token, args.tgt_vocab_path, args.unk, args.threshold)
+                                       args.mask_token, args.tgt_vocab_path, args.rebuild_vocab, args.unk,
+                                       args.threshold)
 
 print("Source language vocab size: {}".format(len(src_vocab)))
 print("Target language vocab size: {}".format(len(tgt_vocab)))
@@ -124,7 +127,7 @@ train_data = NMTDataset(src_data, tgt_data)
 train_sampler = torch.utils.data.distributed.DistributedSampler(train_data)
 
 train_loader = DataLoader(train_data, args.batch_size, shuffle=False, sampler=train_sampler,
-                          collate_fn=lambda batch: collate(batch, padding_value, device), drop_last=True)
+                          collate_fn=lambda batch: collate(batch, padding_value, device=device), drop_last=True)
 
 STEPS = len(range(0, len(src_data), args.batch_size))
 save_model_steps = max(int(STEPS * args.save_model_steps), 1)
@@ -148,11 +151,11 @@ for i in range(args.start_epoch, args.end_epoch):
         batch_loss = s2s.module.train_batch(input_batch, target_batch, padding_value, criterion,
                                             use_teacher_forcing_list[j])
 
-        epoch_loss += batch_loss.item()
-
         optimizer.zero_grad()
         batch_loss.backward()
         optimizer.step()
+
+        epoch_loss += batch_loss.item()
         steps += 1
 
         batch_word_count = target_batch.size(0) * target_batch.size(1)

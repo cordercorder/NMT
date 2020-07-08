@@ -16,9 +16,11 @@ class NMTDataset(Dataset):
     def __len__(self):
         return len(self.data)
 
-def load_corpus_data(data_path, language_name, start_token, end_token, mask_token, vocab_path, unk="UNK", threshold=0):
+def load_corpus_data(data_path, language_name, start_token, end_token, mask_token, vocab_path, rebuild_vocab,
+                     unk="UNK", threshold=0):
 
-    v = Vocab(language_name, start_token, end_token, mask_token, threshold=threshold)
+    if rebuild_vocab:
+        v = Vocab(language_name, start_token, end_token, mask_token, threshold=threshold)
 
     corpus = []
 
@@ -28,18 +30,23 @@ def load_corpus_data(data_path, language_name, start_token, end_token, mask_toke
 
         for line in data:
             line = " ".join([start_token, normalizeString(line, to_ascii=False), end_token])
-            v.add_sentence(line, normalize=False)
+
+            if rebuild_vocab:
+                v.add_sentence(line, normalize=False)
+
             corpus.append(line)
 
     data2index = []
 
-    v.add_unk(unk)
+    if rebuild_vocab:
+        v.add_unk(unk)
+        v.save(vocab_path)
+    else:
+        v = Vocab.load(vocab_path)
 
     for line in corpus:
 
         data2index.append([v.get_index(token) for token in line.split()])
-
-    v.save(vocab_path)
 
     return data2index, v
 

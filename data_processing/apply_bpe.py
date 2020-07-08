@@ -1,7 +1,7 @@
 import subprocess
 import os
 
-num_operations = 32000
+num_operations = 20000
 
 prefix = "/data/rrjin/corpus_data/ted_data"
 
