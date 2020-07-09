@@ -2,15 +2,15 @@ python -m torch.distributed.launch --nproc_per_node=3 multi_gpu_train.py \
     --device_id 1 2 3 \
     --src_language combine \
     --tgt_language en \
-    --src_path /data/rrjin/corpus_data/ted_data/src_combine_train_bpe_20000.txt \
-    --tgt_path /data/rrjin/corpus_data/ted_data/tgt_en_train_bpe_20000.txt \
-    --src_vocab_path /data/rrjin/NMT/data/src_combine_20000.vocab \
-    --tgt_vocab_path /data/rrjin/NMT/data/tgt_en_20000.vocab \
+    --src_path /data/rrjin/corpus_data/lang_vec_data/bible-corpus/train_data/train_src_combine_bpe_32000.txt \
+    --tgt_path /data/rrjin/corpus_data/lang_vec_data/bible-corpus/train_data/train_tgt_en_bpe_32000.txt \
+    --src_vocab_path /data/rrjin/NMT/data/src_combine_32000.vocab \
+    --tgt_vocab_path /data/rrjin/NMT/data/tgt_en_32000.vocab \
     --rnn_type lstm \
-    --embedding_size 256 \
+    --embedding_size 512 \
     --hidden_size 512 \
     --num_layers 3 \
-    --checkpoint /data/rrjin/NMT/data/models/test \
+    --checkpoint /data/rrjin/NMT/data/models/basic_single_gpu_lstm \
     --batch_size 32 \
-    --dropout 0.1 \
-    --attention_size 512
+    --dropout 0.2 \
+    --sort_sentence_by_length False

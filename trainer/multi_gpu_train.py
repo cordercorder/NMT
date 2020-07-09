@@ -49,15 +49,18 @@ parser.add_argument("--teacher_forcing_ratio", default=0.5, type=float)
 parser.add_argument("--mask_token", default="<mask>")
 parser.add_argument("--rebuild_vocab", default=True, type=bool)
 
+parser.add_argument("--normalize", default=True, type=bool)
+parser.add_argument("--sort_sentence_by_length", default=True, type=bool)
+
 args, unknown = parser.parse_known_args()
 
 src_data, src_vocab = load_corpus_data(args.src_path, args.src_language, args.start_token, args.end_token,
                                        args.mask_token, args.src_vocab_path, args.rebuild_vocab, args.unk,
-                                       args.threshold)
+                                       args.threshold, args.normalize)
 
 tgt_data, tgt_vocab = load_corpus_data(args.tgt_path, args.tgt_language, args.start_token, args.end_token,
                                        args.mask_token, args.tgt_vocab_path, args.rebuild_vocab, args.unk,
-                                       args.threshold)
+                                       args.threshold, args.normalize)
 
 print("Source language vocab size: {}".format(len(src_vocab)))
 print("Target language vocab size: {}".format(len(tgt_vocab)))
@@ -71,7 +74,8 @@ device = torch.device("cuda", local_rank)
 
 assert len(src_data) == len(tgt_data)
 
-src_data, tgt_data = sort_src_sentence_by_length(list(zip(src_data, tgt_data)))
+if args.sort_sentence_by_length:
+    src_data, tgt_data = sort_src_sentence_by_length(list(zip(src_data, tgt_data)))
 
 if args.load:
 
@@ -148,8 +152,12 @@ for i in range(args.start_epoch, args.end_epoch):
 
     for j, (input_batch, target_batch) in enumerate(train_loader):
 
-        batch_loss = s2s.module.train_batch(input_batch, target_batch, padding_value, criterion,
-                                            use_teacher_forcing_list[j])
+        try:
+            batch_loss = s2s.module.train_batch(input_batch, target_batch, padding_value, criterion,
+                                                use_teacher_forcing_list[j])
+        except RuntimeError:
+            print(input_batch.size(), target_batch.size())
+
 
         optimizer.zero_grad()
         batch_loss.backward()

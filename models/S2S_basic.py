@@ -153,8 +153,7 @@ class Decoder(nn.Module):
                 # decoder_input = torch.squeeze(pred_index, 2)
 
                 # pred_index: (1, batch_size)
-                pred_index = torch.argmax(decoder_output, dim=2)
-                decoder_input = pred_index
+                decoder_input = torch.argmax(decoder_output, dim=2)
 
             decoder_batch_output.append(decoder_output[0])
 
@@ -185,6 +184,8 @@ class S2S(nn.Module):
         # encoder_output: (input_length, batch_size, num_directions * hidden_size)
         # encoder_hidden_state: (num_layers * num_directions, batch_size, hidden_size)
         encoder_output, encoder_hidden_state = self.encoder(input_batch)
+
+        del encoder_output
 
         # ------deprecated------ #
         # encoder_output: (1, batch_size, num_directions * hidden_size)

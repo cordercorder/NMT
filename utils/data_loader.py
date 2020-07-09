@@ -17,7 +17,7 @@ class NMTDataset(Dataset):
         return len(self.data)
 
 def load_corpus_data(data_path, language_name, start_token, end_token, mask_token, vocab_path, rebuild_vocab,
-                     unk="UNK", threshold=0):
+                     unk="UNK", threshold=0, normalize=True):
 
     if rebuild_vocab:
         v = Vocab(language_name, start_token, end_token, mask_token, threshold=threshold)
@@ -29,7 +29,12 @@ def load_corpus_data(data_path, language_name, start_token, end_token, mask_toke
         data = f.read().split("\n")
 
         for line in data:
-            line = " ".join([start_token, normalizeString(line, to_ascii=False), end_token])
+
+            if normalize:
+                line = " ".join([start_token, normalizeString(line, to_ascii=False), end_token])
+            else:
+                line = "".join(c for c in line if c != "@")
+                line = " ".join([start_token, line, end_token])
 
             if rebuild_vocab:
                 v.add_sentence(line, normalize=False)
