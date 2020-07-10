@@ -142,7 +142,7 @@ for i in range(args.start_epoch, args.end_epoch):
 
         if steps % save_model_steps == 0:
             
-            torch.save(save_model(s2s, args.attention_size, optimizer, args), args.checkpoint + "_" + str(i) + "_" + str(steps))
+            torch.save(save_model(s2s, optimizer, args), args.checkpoint + "_" + str(i) + "_" + str(steps))
             batch_loss_value = batch_loss.item()
             ppl = math.exp(batch_loss_value / batch_word_count)
             print("Batch loss: {}, batch perplexity: {}".format(batch_loss_value, ppl))
@@ -150,5 +150,5 @@ for i in range(args.start_epoch, args.end_epoch):
 
     epoch_loss /= word_count
 
-    torch.save(save_model(s2s, args.attention_size, optimizer, args), args.checkpoint + "__{}_{:.6f}".format(i, epoch_loss))
+    torch.save(save_model(s2s, optimizer, args), args.checkpoint + "__{}_{:.6f}".format(i, epoch_loss))
     print("Epoch: {}, time: {} seconds, loss: {}".format(i, time.time() - start_time, epoch_loss))

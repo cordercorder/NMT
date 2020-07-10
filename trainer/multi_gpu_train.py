@@ -47,10 +47,10 @@ parser.add_argument("--threshold", default=0, type=int)
 parser.add_argument("--save_model_steps", default=0.3, type=float)
 parser.add_argument("--teacher_forcing_ratio", default=0.5, type=float)
 parser.add_argument("--mask_token", default="<mask>")
-parser.add_argument("--rebuild_vocab", default=True, type=bool)
 
-parser.add_argument("--normalize", default=True, type=bool)
-parser.add_argument("--sort_sentence_by_length", default=True, type=bool)
+parser.add_argument("--rebuild_vocab", action="store_true", default=False)
+parser.add_argument("--normalize", action="store_true", default=False)
+parser.add_argument("--sort_sentence_by_length", action="store_true", default=False)
 
 args, unknown = parser.parse_known_args()
 
@@ -166,13 +166,13 @@ for i in range(args.start_epoch, args.end_epoch):
         epoch_loss += batch_loss.item()
         steps += 1
 
-        batch_word_count = target_batch.size(0) * target_batch.size(1)
+        batch_word_count = torch.ne(target_batch, padding_value).sum().item()
 
         word_count += batch_word_count
 
         if steps % save_model_steps == 0:
             if local_rank == 0:
-                torch.save(save_model(s2s, args.attention_size, optimizer, args),
+                torch.save(save_model(s2s, optimizer, args),
                            args.checkpoint + "_" + str(i) + "_" + str(steps))
             batch_loss_value = batch_loss.item()
             ppl = math.exp(batch_loss_value / batch_word_count)
@@ -181,7 +181,7 @@ for i in range(args.start_epoch, args.end_epoch):
 
     epoch_loss /= word_count
     if local_rank == 0:
-        torch.save(save_model(s2s, args.attention_size, optimizer, args),
+        torch.save(save_model(s2s, optimizer, args),
                    args.checkpoint + "__{}_{:.6f}".format(i, epoch_loss))
     print("Epoch: {}, time: {} seconds, loss: {}, local rank: {}".format(i, time.time() - start_time, epoch_loss,
                                                                          local_rank))
