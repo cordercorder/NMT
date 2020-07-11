@@ -40,11 +40,17 @@ def plot_freq(freq_data, fig_name):
 
     fig = plt.figure()
 
+    idx = fig_name.find(".") + 1
+    name = fig_name[:idx]
+
     ax = fig.add_subplot(1, 1, 1)
-    ax.plot(length, freq)
+    plt.title(name)
+    ax.plot(length, freq, label=name)
 
     plt.xlabel("frequency")
     plt.ylabel("length")
+    plt.grid()
+    plt.legend()
     plt.savefig("./" + fig_name)
 
 src_data = sort_sentence(read_data(src_path))
@@ -59,8 +65,8 @@ tgt_freq = frequency(tgt_data)
 src_freq = sort_freq(src_freq)
 tgt_freq = sort_freq(tgt_freq)
 
-plot_freq(src_freq, "statics of src3.jpg")
-plot_freq(tgt_freq, "statics of tgt3.jpg")
+plot_freq(src_freq, "statistic of src bible.jpg")
+plot_freq(tgt_freq, "statistic of tgt bible.jpg")
 
 sentence_number = len(src_data)
 

@@ -95,15 +95,17 @@ with torch.no_grad():
                     # cn: (num_layers, batch_size, num_directions * hidden_size)
                     cn = cn.view(-1, 2, cn.size(1), cn.size(2))
                     cn = torch.cat([cn[:, 0, :, :], cn[:, 1, :, :]], dim=2)
-                    decoder_hidden_state = (hn, cn)
+                    encoder_hidden_state = (hn, cn)
 
                 else:
                     encoder_hidden_state = encoder_hidden_state.view(-1, 2, encoder_hidden_state.size(1),
                                                                      encoder_hidden_state.size(2))
 
                     # decoder_hidden_state: (num_layers, batch_size, num_directions * hidden_size)
-                    decoder_hidden_state = torch.cat([encoder_hidden_state[:, 0, :, :],
+                    encoder_hidden_state = torch.cat([encoder_hidden_state[:, 0, :, :],
                                                       encoder_hidden_state[:, 1, :, :]], dim=2)
+
+            decoder_hidden_state = encoder_hidden_state
 
             attention_weight = torch.zeros(max_length, inputs.size(0))
 
