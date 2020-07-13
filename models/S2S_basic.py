@@ -222,11 +222,11 @@ class S2S(nn.Module):
 
         return decoder_output
 
-    def train_batch(self, input_batch, target_batch, padding_value, criterion, use_teacher_forcing):
+    def train_batch(self, input_batch, target_batch, padding_value, criterion, optimizer, use_teacher_forcing):
 
         output = self(input_batch, target_batch, use_teacher_forcing)
 
-        batch_loss = torch.zeros(target_batch.size(0) - 1 , 1, device=input_batch.device)
+        batch_loss = torch.zeros(target_batch.size(0) - 1, 1, device=input_batch.device)
 
         for k in range(1, target_batch.size(0)):
             # tmp_output_batch: (batch_size, vocab_size)
@@ -242,4 +242,9 @@ class S2S(nn.Module):
 
             batch_loss[k-1] = loss.sum()
 
-        return batch_loss.sum()
+        optimizer.zero_grad()
+        batch_loss = batch_loss.sum()
+        batch_loss.backward()
+        optimizer.step()
+
+        return batch_loss.item()

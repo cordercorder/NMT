@@ -4,13 +4,14 @@ python -m torch.distributed.launch --nproc_per_node=3 multi_gpu_train.py \
     --tgt_language en \
     --src_path /data/rrjin/corpus_data/lang_vec_data/bible-corpus/train_data/train_src_combine_bpe_32000.txt \
     --tgt_path /data/rrjin/corpus_data/lang_vec_data/bible-corpus/train_data/train_tgt_en_bpe_32000.txt \
-    --src_vocab_path /data/rrjin/NMT/data/src_combine_32000.vocab \
-    --tgt_vocab_path /data/rrjin/NMT/data/tgt_en_32000.vocab \
+    --src_vocab_path /data/rrjin/NMT/data/attention_src_combine_32000.vocab \
+    --tgt_vocab_path /data/rrjin/NMT/data/attention_tgt_en_32000.vocab \
     --rnn_type lstm \
     --embedding_size 512 \
     --hidden_size 512 \
     --num_layers 3 \
-    --checkpoint /data/rrjin/NMT/data/models/basic_multi_gpu_lstm \
+    --checkpoint /data/rrjin/NMT/data/models/attention_multi_gpu_lstm \
     --batch_size 32 \
     --dropout 0.2 \
-    --rebuild_vocab
+    --rebuild_vocab \
+    --attention_size 512

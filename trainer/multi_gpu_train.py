@@ -154,16 +154,11 @@ for i in range(args.start_epoch, args.end_epoch):
 
         try:
             batch_loss = s2s.module.train_batch(input_batch, target_batch, padding_value, criterion,
-                                                use_teacher_forcing_list[j])
+                                                optimizer, use_teacher_forcing_list[j])
         except RuntimeError:
             print(input_batch.size(), target_batch.size())
 
-
-        optimizer.zero_grad()
-        batch_loss.backward()
-        optimizer.step()
-
-        epoch_loss += batch_loss.item()
+        epoch_loss += batch_loss
         steps += 1
 
         batch_word_count = torch.ne(target_batch, padding_value).sum().item()
@@ -174,9 +169,8 @@ for i in range(args.start_epoch, args.end_epoch):
             if local_rank == 0:
                 torch.save(save_model(s2s, optimizer, args),
                            args.checkpoint + "_" + str(i) + "_" + str(steps))
-            batch_loss_value = batch_loss.item()
-            ppl = math.exp(batch_loss_value / batch_word_count)
-            print("Batch loss: {}, batch perplexity: {}, local rank: {}".format(batch_loss_value, ppl, local_rank))
+            ppl = math.exp(batch_loss / batch_word_count)
+            print("Batch loss: {}, batch perplexity: {}, local rank: {}".format(batch_loss, ppl, local_rank))
 
 
     epoch_loss /= word_count
@@ -186,4 +180,4 @@ for i in range(args.start_epoch, args.end_epoch):
     print("Epoch: {}, time: {} seconds, loss: {}, local rank: {}".format(i, time.time() - start_time, epoch_loss,
                                                                          local_rank))
 
-torch.save(save_model(s2s, args.attention_size, optimizer, args), args.checkpoint + "_rank{}".format(local_rank))
+torch.save(save_model(s2s, optimizer, args), args.checkpoint + "_rank{}".format(local_rank))

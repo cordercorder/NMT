@@ -303,7 +303,7 @@ class S2S(nn.Module):
 
         return decoder_output
 
-    def train_batch(self, input_batch, target_batch, padding_value, criterion, use_teacher_forcing):
+    def train_batch(self, input_batch, target_batch, padding_value, criterion, optimizer, use_teacher_forcing):
 
         output = self(input_batch, target_batch, use_teacher_forcing)
 
@@ -323,4 +323,9 @@ class S2S(nn.Module):
 
             batch_loss[k-1] = loss.sum()
 
-        return batch_loss.sum()
+        optimizer.zero_grad()
+        batch_loss = batch_loss.sum()
+        batch_loss.backward()
+        optimizer.step()
+
+        return batch_loss.item()
