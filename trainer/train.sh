@@ -1,17 +1,19 @@
 python -u -m trainer.train \
-    --device cuda:1 \
-    --src_language combine \
+    --device cuda:0 \
+    --src_language spa \
     --tgt_language en \
-    --src_path /data/rrjin/corpus_data/ted_data/src_combine_train_bpe_28000.txt \
-    --tgt_path /data/rrjin/corpus_data/ted_data/tgt_en_train_bpe_28000.txt \
-    --src_vocab_path /data/rrjin/NMT/data/src_combine_28000.vocab \
-    --tgt_vocab_path /data/rrjin/NMT/data/tgt_en_28000.vocab \
+    --src_path /data/rrjin/NMT/tmpdata/train_src.spa \
+    --tgt_path /data/rrjin/NMT/tmpdata/train_tgt.en \
+    --src_vocab_path /data/rrjin/NMT/tmpdata/src.spa.vocab \
+    --tgt_vocab_path /data/rrjin/NMT/tmpdata/tgt.en.vocab \
     --rnn_type lstm \
     --embedding_size 512 \
     --hidden_size 512 \
     --num_layers 3 \
-    --checkpoint /data/rrjin/NMT/data/models/attention_single_gpu_lstm \
+    --checkpoint /data/rrjin/NMT/tmpdata/test_basic \
     --batch_size 32 \
     --dropout 0.1 \
-    --rebuild_vocab False \
-    --attention_size 512
+    --rebuild_vocab \
+    --attention_size 512 \
+    --normalize \
+    --sort_sentence_by_length

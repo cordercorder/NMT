@@ -26,7 +26,9 @@ class MultiHeadAttentionLayer(nn.Module):
         # query: (batch_size, input_length1, d_model)
         # key: (batch_size, input_length2, d_model)
         # value: (batch_size, input_length2, d_model)
-        # mask: (batch_size, 1, 1, input_length1) or (batch_size, 1, input_length1, input_length1)
+        # mask: src, src, src, src_mask (batch_size, 1, 1, input_length1)
+        # mask: tgt, tgt, tgt, tgt_mask (batch_size, 1, input_length1, input_length1)
+        # mask: tgt, encoder_src, encoder_src, src_mask (batch_size, 1, input_length1, input_length1)
 
         batch_size = query.size(0)
 
@@ -236,6 +238,7 @@ class Decoder(nn.Module):
         for layer in self.layers:
             tgt, self_attention, encoder_attention = layer(tgt, encoder_src, tgt_mask, src_mask)
 
+        # output: (batch_size, tgt_input_length, tgt_vocab_size)
         output = self.linear(tgt)
 
         return output
@@ -290,3 +293,29 @@ class S2S(nn.Module):
         output, attention = self.decoder(tgt, encoder_src, tgt_mask, src_mask)
 
         return output, attention
+
+    def init_parameters(self):
+
+        for p in self.parameters():
+            if p.dim() > 1:
+                nn.init.xavier_normal_(p)
+
+    def count_parameters(self):
+
+        return sum(p.numel() for p in self.parameters())
+
+    def train_batch(self, input_batch, target_batch, criterion, optimizer):
+
+        # input_batch: (batch_size, src_input_length)
+        # target_batch: (batch_size, tgt_input_length)
+
+        # output: (batch_size, tgt_input_length, tgt_vocab_size)
+        output, attention = self(input_batch, target_batch)
+
+        batch_loss = criterion(output.transpose(1, 2), target_batch)
+
+        optimizer.zero_grad()
+        batch_loss.backward()
+        optimizer.step()
+
+        return batch_loss.item()

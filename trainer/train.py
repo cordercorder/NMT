@@ -68,8 +68,6 @@ assert len(src_data) == len(tgt_data)
 if args.sort_sentence_by_length:
     src_data, tgt_data = sort_src_sentence_by_length(list(zip(src_data, tgt_data)))
 
-src_data, tgt_data = sort_src_sentence_by_length(list(zip(src_data, tgt_data)))
-
 if args.load:
     print("Load existing model from {}".format(args.load))
     s2s, optimizer_state_dict = load_model(args.load, training=True, device=device)
@@ -107,9 +105,9 @@ else:
 
 s2s.train()
 
-criterion = nn.CrossEntropyLoss(reduction="none")
-
 padding_value = src_vocab.get_index(args.mask_token)
+
+criterion = nn.CrossEntropyLoss(ignore_index=padding_value, reduction="sum")
 
 assert padding_value == tgt_vocab.get_index(args.mask_token)
 
@@ -134,14 +132,14 @@ for i in range(args.start_epoch, args.end_epoch):
 
     for j, (input_batch, target_batch) in enumerate(train_loader):
 
-        batch_loss = s2s.train_batch(input_batch, target_batch, padding_value, criterion,
-                                     optimizer, use_teacher_forcing_list[j])
+        batch_loss = s2s.train_batch(input_batch, target_batch, criterion, optimizer,
+                                     use_teacher_forcing_list[j])
 
         epoch_loss += batch_loss
 
         steps += 1
 
-        batch_word_count = target_batch.size(0) * target_batch.size(1)
+        batch_word_count = torch.ne(target_batch, padding_value).sum().item()
 
         word_count += batch_word_count
 

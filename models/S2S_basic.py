@@ -224,26 +224,20 @@ class S2S(nn.Module):
 
     def train_batch(self, input_batch, target_batch, padding_value, criterion, optimizer, use_teacher_forcing):
 
+        # input_batch: (input_length, batch_size)
+        # target_batch: (input_length, batch_size)
+
+        # output: List
         output = self(input_batch, target_batch, use_teacher_forcing)
 
-        batch_loss = torch.zeros(target_batch.size(0) - 1, 1, device=input_batch.device)
+        # output: (input_length - 1, batch_size, vocab_size)
+        output = torch.stack(output, dim=0)
 
-        for k in range(1, target_batch.size(0)):
-            # tmp_output_batch: (batch_size, vocab_size)
-            # tmp_target_batch: (batch_size, )
-            tmp_output_batch = output[k - 1]
-            tmp_target_batch = target_batch[k]
-
-            mask = torch.ne(tmp_target_batch, padding_value).float()
-            # loss: (batch_size, )
-            loss = criterion(tmp_output_batch, tmp_target_batch)
-
-            loss *= mask
-
-            batch_loss[k-1] = loss.sum()
+        # output: (batch_size, vocab_size, input_length - 1)
+        # target: (batch_size, input_length - 1)
+        batch_loss = criterion(output.permute(1, 2, 0), target_batch[1:].transpose(0, 1))
 
         optimizer.zero_grad()
-        batch_loss = batch_loss.sum()
         batch_loss.backward()
         optimizer.step()
 
