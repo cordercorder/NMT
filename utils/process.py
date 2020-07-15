@@ -1,6 +1,6 @@
 import unicodedata
 import re
-from models import S2S_attention, S2S_basic
+from models import S2S_attention, S2S_basic, transformer
 import torch
 
 
@@ -150,6 +150,38 @@ def load_model(model_path, training=False, device="cpu"):
 
     return s2s
 
+def save_transformer(s2s_model, optimizer, args):
+
+    if isinstance(s2s_model, torch.nn.parallel.distributed.DistributedDataParallel):
+        s2s_model = s2s_model.module
+
+    return {
+        "model_dict": s2s_model.state_dict(),
+        "optimizer_state_dict": optimizer.state_dict(),
+        "args": args
+    }
+
+def load_transformer(model_path, src_vocab_size, max_src_len, tgt_vocab_size, max_tgt_len, padding_value,
+                     training=False, device="cpu"):
+
+    model_ckpt = torch.load(model_path, map_location="cpu")
+
+    args = model_ckpt["args"]
+
+    encoder = transformer.Encoder(src_vocab_size, max_src_len, args.d_model, args.num_layers, args.num_heads,
+                                  args.d_ff, args.dropout, device)
+    decoder = transformer.Decoder(tgt_vocab_size, max_tgt_len, args.d_model, args.num_layers, args.num_heads,
+                                  args.d_ff, args.dropout, device)
+
+    s2s = transformer.S2S(encoder, decoder, padding_value, device).to(device)
+
+    s2s.load_state_dict(model_ckpt["model_dict"])
+
+    if training:
+        optimizer_state_dict = model_ckpt["optimizer_state_dict"]
+        return s2s, optimizer_state_dict
+
+    return s2s
 
 if __name__ == "__main__":
 

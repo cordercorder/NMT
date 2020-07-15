@@ -25,7 +25,7 @@ args, unknown = parser.parse_known_args()
 
 device = args.device
 
-s2s = (load_model(args.load)).to(device)
+s2s = load_model(args.load, device=device)
 
 print("Load from: {}".format(args.load))
 

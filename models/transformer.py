@@ -12,6 +12,7 @@ class MultiHeadAttentionLayer(nn.Module):
         self.d_model = d_model
         self.num_heads = num_heads
         self.d_k = d_model // num_heads
+        self.d_v = self.d_k
 
         self.WQ = nn.Linear(d_model, d_model)
         self.WK = nn.Linear(d_model, d_model)
@@ -39,9 +40,9 @@ class MultiHeadAttentionLayer(nn.Module):
         # Q: (batch_size, num_heads, input_length1, d_k)
         # K: (batch_size, num_heads, input_length2, d_k)
         # V: (batch_size, num_heads, input_length2, d_v)
-        Q = Q.view(batch_size, -1, self.num_heads, self.d_model).transpose(1, 2)
-        K = K.view(batch_size, -1, self.num_heads, self.d_model).transpose(1, 2)
-        V = V.view(batch_size, -1, self.num_heads, self.d_model).transpose(1, 2)
+        Q = Q.view(batch_size, -1, self.num_heads, self.d_k).transpose(1, 2)
+        K = K.view(batch_size, -1, self.num_heads, self.d_k).transpose(1, 2)
+        V = V.view(batch_size, -1, self.num_heads, self.d_v).transpose(1, 2)
 
         # energy: (batch_size, num_heads, input_length1, input_length2)
         energy = torch.matmul(Q, K.transpose(2, 3)) / self.scale
@@ -290,9 +291,9 @@ class S2S(nn.Module):
 
         encoder_src = self.encoder(src, src_mask)
 
-        output, attention = self.decoder(tgt, encoder_src, tgt_mask, src_mask)
+        output = self.decoder(tgt, encoder_src, tgt_mask, src_mask)
 
-        return output, attention
+        return output
 
     def init_parameters(self):
 
@@ -310,7 +311,7 @@ class S2S(nn.Module):
         # target_batch: (batch_size, tgt_input_length)
 
         # output: (batch_size, tgt_input_length, tgt_vocab_size)
-        output, attention = self(input_batch, target_batch)
+        output = self(input_batch, target_batch)
 
         batch_loss = criterion(output.transpose(1, 2), target_batch)
 

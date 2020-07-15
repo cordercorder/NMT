@@ -50,7 +50,7 @@ for model_path in glob.glob(args.model_prefix + "*"):
 
     print("Load model from {}".format(model_path))
 
-    s2s = (load_model(model_path)).to(device)
+    s2s = load_model(model_path, device=device)
 
     s2s.eval()
 
