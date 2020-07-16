@@ -48,7 +48,7 @@ class MultiHeadAttentionLayer(nn.Module):
         energy = torch.matmul(Q, K.transpose(2, 3)) / self.scale
 
         if mask is not None:
-            energy = energy.masked_fill(mask, -1e12)
+            energy = energy.masked_fill(mask == False, -1e12)
 
         # attention: (batch_size, num_heads, input_length1, input_length2)
         attention = torch.softmax(energy, dim=-1)
@@ -107,7 +107,7 @@ class EncoderLayer(nn.Module):
         src_, self_attention = self.self_attention_layer(src, src, src, src_mask)
 
         # dropout, residual connection, layer normalization
-        # src_encoding: (batch_size, input_length, d_model)
+        # src: (batch_size, input_length, d_model)
         src = self.self_attention_layer_norm(src + self.dropout(src_))
 
         src_ = self.feed_forward_layer(src)
@@ -132,13 +132,13 @@ class PositionalEncoding:
         self.pe[:, 0::2] = torch.sin(position * div_term)
         self.pe[:, 1::2] = torch.cos(position * div_term)
 
-        # pe: (1, max_src_len, d_model)
+        # pe: (1, max_len, d_model)
         self.pe = self.pe.unsqueeze(0)
 
     def __call__(self, x):
         # x: (batch_size, input_length, d_model)
 
-        x = x + self.pe[:, x.size(1)]
+        x = x + self.pe[:, :x.size(1)]
         return x
 
 
