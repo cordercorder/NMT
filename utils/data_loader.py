@@ -16,6 +16,7 @@ class NMTDataset(Dataset):
     def __len__(self):
         return len(self.data)
 
+
 def load_corpus_data(data_path, language_name, start_token, end_token, mask_token, vocab_path, rebuild_vocab,
                      unk="UNK", threshold=0, normalize=True):
 
@@ -33,7 +34,6 @@ def load_corpus_data(data_path, language_name, start_token, end_token, mask_toke
             if normalize:
                 line = " ".join([start_token, normalizeString(line, to_ascii=False), end_token])
             else:
-                line = "".join(c for c in line if c != "@")
                 line = " ".join([start_token, line, end_token])
 
             if rebuild_vocab:
@@ -81,6 +81,7 @@ def collate(batch, padding_value, device, batch_first=False):
     tgt_batch_tensor = pad_data(tgt_batch, padding_value, device, batch_first)
 
     return src_batch_tensor, tgt_batch_tensor
+
 
 if __name__ == "__main__":
 

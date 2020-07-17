@@ -1,3 +1,6 @@
+import sys
+sys.path.append("../")
+
 import argparse
 import torch
 import torch.nn as nn
@@ -144,7 +147,7 @@ for i in range(args.start_epoch, args.end_epoch):
         word_count += batch_word_count
 
         if steps % save_model_steps == 0:
-            
+
             torch.save(save_model(s2s, optimizer, args), args.checkpoint + "_" + str(i) + "_" + str(steps))
             ppl = math.exp(batch_loss / batch_word_count)
             print("Batch loss: {}, batch perplexity: {}".format(batch_loss, ppl))

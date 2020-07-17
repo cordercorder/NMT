@@ -1,0 +1,1 @@
+nohup bash train_transformer.sh > ../logs/test_transformer_train_logs_0.00001.txt 2>&1 &

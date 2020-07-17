@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 from utils.process import normalizeString
 import pickle
 import os
@@ -147,6 +147,7 @@ class Vocab:
             "language_name": self.language_name,
             "start_token": self.start_token,
             "end_token": self.end_token,
+            "mask_token": self.mask_token,
             "threshold": self.threshold,
             "__token2index": self.__token2index,
             "__index2token": self.__index2token,
@@ -169,12 +170,17 @@ class Vocab:
         if not os.path.isfile(load_path):
             raise Exception("The vocab path do not exit")
 
-
         with open(load_path, "rb") as f:
             entity = pickle.load(f)
             language_name = entity["language_name"]
             start_token = entity["start_token"]
             end_token = entity["end_token"]
+
+            try:
+                mask_token = entity["mask_token"]
+            except IndexError:
+                mask_token = "<mask>"
+
             threshold = entity["threshold"]
             __token2index = entity["__token2index"]
             __index2token = entity["__index2token"]
@@ -182,7 +188,7 @@ class Vocab:
             unk_token = entity["unk_token"]
             unk_token_index = entity["unk_token_index"]
 
-            v = cls(language_name, start_token, end_token, threshold)
+            v = cls(language_name, start_token, end_token, mask_token, threshold)
 
             v.__token_count = __token_count
             v.__index2token = __index2token
@@ -213,67 +219,3 @@ class Vocab:
             s = ", ".join(tmp_key)
 
         return s
-
-
-if __name__ == "__main__":
-
-    def test(v):
-        print("------")
-        print(v.language_name)
-        print("------\n")
-
-        print("------")
-        print(v._Vocab__index2token)
-        print("------\n")
-
-        print("------")
-        print(v._Vocab__token2index)
-        print("------\n")
-
-        print("------")
-        print(v._Vocab__token_count)
-        print("------\n")
-
-        print("------")
-        print(v.start_token)
-        print("------\n")
-
-        print("------")
-        print(v.end_token)
-        print("------\n")
-
-        print("------")
-        print(v.threshold)
-        print("------\n")
-
-        print("------")
-        print(v.unk_token)
-        print("------\n")
-
-        print("------")
-        print(v.unk_token_index)
-        print("------\n")
-
-
-    v = Vocab("en", "<s>", "<e>")
-
-    v.addtoken("test1")
-    v.addtoken("test2")
-
-    v.add_corpus("D:/jinrenren/NLP_study/codes/NMT/data/test_input.en")
-
-    # print(v.get_index("test"))
-
-    test(v)
-
-    v.add_unk()
-
-    print(v.get_index("test"))
-
-    v.save("D:/jinrenren/NLP_study/codes/NMT/data/vocab.en")
-
-    test(v)
-
-    v2 = Vocab.load("D:/jinrenren/NLP_study/codes/NMT/data/vocab.en")
-
-    test(v2)

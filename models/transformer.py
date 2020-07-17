@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import math
 
+
 class MultiHeadAttentionLayer(nn.Module):
 
     def __init__(self, d_model, num_heads, dropout, device):
@@ -310,8 +311,10 @@ class S2S(nn.Module):
         # input_batch: (batch_size, src_input_length)
         # target_batch: (batch_size, tgt_input_length)
 
-        # output: (batch_size, tgt_input_length, tgt_vocab_size)
-        output = self(input_batch, target_batch)
+        # output: (batch_size, tgt_input_length - 1, tgt_vocab_size)
+        output = self(input_batch, target_batch[:, :-1])
+
+        target_batch = target_batch[:, 1:]
 
         batch_loss = criterion(output.transpose(1, 2), target_batch)
 

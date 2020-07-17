@@ -32,7 +32,7 @@ def normalizeString(s, remove_punctuation=False, to_ascii=True):
 
     # add a space between normal character and punctuation
     # s = re.sub(r"([.!?,:;'\"¿，。；：‘、？．“”！])", r" \1 ", s)
-    s = re.sub(r"([!\"#$%&'()*+,-./:;<=>?@\[\]\\^_`{|}~¿，。；：‘、？．“”！])", r" \1 ", s)
+    s = re.sub(r"([!\"#$%&'()*+,-./:;<=>?\[\]\\^_`{|}~¿，。；：‘、？．“”！])", r" \1 ", s)
 
     if remove_punctuation:
         # remove regular punctuation
@@ -40,8 +40,6 @@ def normalizeString(s, remove_punctuation=False, to_ascii=True):
     else:
         # remove quotation marks
         s = re.sub(r"['‘\"“”]+", r" ", s)
-    
-    s = "".join(c for c in s if c != "@")
 
     # change multiple spaces into one space
     s = re.sub(r"[ ]+", " ", s)
@@ -119,6 +117,7 @@ def save_model(s2s_model, optimizer, args):
             "args": args
         }
 
+
 def load_model(model_path, training=False, device="cpu"):
 
     model_ckpt = torch.load(model_path, map_location="cpu")
@@ -150,6 +149,7 @@ def load_model(model_path, training=False, device="cpu"):
 
     return s2s
 
+
 def save_transformer(s2s_model, optimizer, args):
 
     if isinstance(s2s_model, torch.nn.parallel.distributed.DistributedDataParallel):
@@ -160,6 +160,7 @@ def save_transformer(s2s_model, optimizer, args):
         "optimizer_state_dict": optimizer.state_dict(),
         "args": args
     }
+
 
 def load_transformer(model_path, src_vocab_size, max_src_len, tgt_vocab_size, max_tgt_len, padding_value,
                      training=False, device="cpu"):
@@ -182,6 +183,17 @@ def load_transformer(model_path, src_vocab_size, max_src_len, tgt_vocab_size, ma
         return s2s, optimizer_state_dict
 
     return s2s
+
+
+def read_data(data_path, remove_punctuation=False, to_ascii=True):
+
+    with open(data_path) as f:
+
+        data = f.read().split("\n")
+
+        data = [normalizeString(line, remove_punctuation, to_ascii) for line in data]
+        return data
+
 
 if __name__ == "__main__":
 

@@ -99,7 +99,7 @@ else:
 
 s2s.train()
 
-criterion = nn.CrossEntropyLoss(ignore_index=padding_value, reduction="sum")
+criterion = nn.CrossEntropyLoss(ignore_index=padding_value)
 
 train_data = NMTDataset(src_data, tgt_data)
 train_loader = DataLoader(train_data, args.batch_size, shuffle=True,
@@ -126,16 +126,12 @@ for i in range(args.start_epoch, args.end_epoch):
 
         steps += 1
 
-        batch_word_count = torch.ne(target_batch, padding_value).sum().item()
-
-        word_count += batch_word_count
-
         if steps % save_model_steps == 0:
             torch.save(save_transformer(s2s, optimizer, args), args.checkpoint + "_" + str(i) + "_" + str(steps))
-            ppl = math.exp(batch_loss / batch_word_count)
+            ppl = math.exp(batch_loss)
             print("Batch loss: {}, batch perplexity: {}".format(batch_loss, ppl))
 
-    epoch_loss /= word_count
+    epoch_loss /= steps
 
     torch.save(save_transformer(s2s, optimizer, args), args.checkpoint + "__{}_{:.6f}".format(i, epoch_loss))
     print("Epoch: {}, time: {} seconds, loss: {}".format(i, time.time() - start_time, epoch_loss))
