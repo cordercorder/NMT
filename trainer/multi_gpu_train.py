@@ -49,18 +49,17 @@ parser.add_argument("--teacher_forcing_ratio", default=0.5, type=float)
 parser.add_argument("--mask_token", default="<mask>")
 
 parser.add_argument("--rebuild_vocab", action="store_true", default=False)
-parser.add_argument("--normalize", action="store_true", default=False)
 parser.add_argument("--sort_sentence_by_length", action="store_true", default=False)
 
 args, unknown = parser.parse_known_args()
 
 src_data, src_vocab = load_corpus_data(args.src_path, args.src_language, args.start_token, args.end_token,
                                        args.mask_token, args.src_vocab_path, args.rebuild_vocab, args.unk,
-                                       args.threshold, args.normalize)
+                                       args.threshold)
 
 tgt_data, tgt_vocab = load_corpus_data(args.tgt_path, args.tgt_language, args.start_token, args.end_token,
                                        args.mask_token, args.tgt_vocab_path, args.rebuild_vocab, args.unk,
-                                       args.threshold, args.normalize)
+                                       args.threshold)
 
 print("Source language vocab size: {}".format(len(src_vocab)))
 print("Target language vocab size: {}".format(len(tgt_vocab)))

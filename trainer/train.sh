@@ -15,5 +15,4 @@ python -u train.py \
     --dropout 0.1 \
     --rebuild_vocab \
     --attention_size 512 \
-    --normalize \
     --sort_sentence_by_length

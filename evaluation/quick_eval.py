@@ -1,10 +1,10 @@
 import glob
 import argparse
-from utils.process import read_data, load_model, load_transformer
+from utils.process import read_data, load_model, load_transformer, write_data
 from utils.Vocab import Vocab
 from evaluation.S2S_translation import greedy_decoding
-from nltk.translate.bleu_score import corpus_bleu
 import os
+from subprocess import call
 
 
 parser = argparse.ArgumentParser()
@@ -22,12 +22,10 @@ args, unknown = parser.parse_known_args()
 src_vocab = Vocab.load(args.src_vocab_path)
 tgt_vocab = Vocab.load(args.tgt_vocab_path)
 
-src_data = read_data(args.test_src_path, to_ascii=False)
-tgt_data = read_data(args.test_tgt_path, to_ascii=False)
+src_data = read_data(args.test_src_path)
 
 device = args.device
 
-select_model = []
 
 for model_path in glob.glob(args.model_prefix + "*"):
 
@@ -62,29 +60,14 @@ for model_path in glob.glob(args.model_prefix + "*"):
 
     p = os.path.join(args.translation_output_dir, model_name + "_translations.txt")
 
-    with open(p, "w") as f:
+    write_data(pred_data, p)
 
-        f.write("Load model from {}\n".format(model_path))
+    p_tok = os.path.join(args.translation_output_dir, model_name + "_translations_tok.txt")
 
-        for tgt, pred in zip(tgt_data, pred_data):
+    tok_command = "sed -r 's/(@@ )|(@@ ?$)//g' {} > {}".format(p, p_tok)
 
-            pred = " ".join(pred)
+    call(tok_command, shell=True)
 
-            f.write(tgt + "\n")
-            f.write(pred + "\n")
-            f.write("\n")
+    bleu_calculation_command = "perl /data/rrjin/NMT/scripts/multi-bleu.perl {} < {}".format(args.test_tgt_path, p_tok)
 
-        bleu_value = corpus_bleu([[line.split()] for line in tgt_data], pred_data)
-        f.write(str(bleu_value))
-
-    print(bleu_value)
-
-    select_model.append((model_name, bleu_value))
-
-print("\n")
-
-select_model.sort(key=lambda item: -item[1])
-
-for model_name, bleu_value in select_model:
-
-    print("{}: {}".format(model_name, bleu_value))
+    call(bleu_calculation_command, shell=True)

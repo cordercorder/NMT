@@ -10,8 +10,8 @@ python -u train_transformer.py \
     --tgt_path /data/rrjin/NMT/tmpdata/train_tgt.en \
     --src_vocab_path /data/rrjin/NMT/tmpdata/src2.spa.vocab \
     --tgt_vocab_path /data/rrjin/NMT/tmpdata/tgt2.en.vocab \
-    --checkpoint /data/rrjin/NMT/tmpdata/test_transformer \
+    --checkpoint /data/rrjin/NMT/tmpdata/test_transformer2 \
     --normalize \
     --dropout 0.1 \
     --rebuild_vocab \
-    --learning_rate 0.00001
+    --learning_rate 0.00005

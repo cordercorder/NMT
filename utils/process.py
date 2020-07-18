@@ -185,13 +185,20 @@ def load_transformer(model_path, src_vocab_size, max_src_len, tgt_vocab_size, ma
     return s2s
 
 
-def read_data(data_path, remove_punctuation=False, to_ascii=True):
+def write_data(data, write_path):
+
+    if data and isinstance(data[0], list):
+        data = [" ".join(line) for line in data]
+
+    with open(write_path, "w") as f:
+        f.write("\n".join(data))
+
+
+def read_data(data_path):
 
     with open(data_path) as f:
 
         data = f.read().split("\n")
-
-        data = [normalizeString(line, remove_punctuation, to_ascii) for line in data]
         return data
 
 

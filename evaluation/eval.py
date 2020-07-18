@@ -1,6 +1,6 @@
 import argparse
 from utils.Vocab import Vocab
-from utils.process import load_model, read_data
+from utils.process import load_model, read_data, write_data
 from nltk.translate.bleu_score import corpus_bleu
 from evaluation.S2S_translation import beam_search_decoding
 
@@ -33,14 +33,15 @@ tgt_vocab = Vocab.load(args.tgt_vocab_path)
 
 pred_data = []
 
-src_data = read_data(args.test_src_path, to_ascii=False)
-tgt_data = read_data(args.test_tgt_path, to_ascii=False)
+src_data = read_data(args.test_src_path)
+tgt_data = read_data(args.test_tgt_path)
 
 s2s.eval()
 
 for line in src_data:
     pred_data.append(beam_search_decoding(s2s, line, src_vocab, tgt_vocab, args.beam_size, device))
 
+write_data(pred_data, args.translation_output)
 
 with open(args.translation_output, "w") as f:
 

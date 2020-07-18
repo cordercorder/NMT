@@ -18,7 +18,7 @@ class NMTDataset(Dataset):
 
 
 def load_corpus_data(data_path, language_name, start_token, end_token, mask_token, vocab_path, rebuild_vocab,
-                     unk="UNK", threshold=0, normalize=True):
+                     unk="UNK", threshold=0):
 
     if rebuild_vocab:
         v = Vocab(language_name, start_token, end_token, mask_token, threshold=threshold)
@@ -31,10 +31,7 @@ def load_corpus_data(data_path, language_name, start_token, end_token, mask_toke
 
         for line in data:
 
-            if normalize:
-                line = " ".join([start_token, normalizeString(line, to_ascii=False), end_token])
-            else:
-                line = " ".join([start_token, line, end_token])
+            line = " ".join([start_token, line, end_token])
 
             if rebuild_vocab:
                 v.add_sentence(line, normalize=False)

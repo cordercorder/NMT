@@ -42,7 +42,6 @@ parser.add_argument("--save_model_steps", default=0.3, type=float)
 parser.add_argument("--mask_token", default="<mask>")
 
 parser.add_argument("--rebuild_vocab", action="store_true", default=False)
-parser.add_argument("--normalize", action="store_true", default=False)
 parser.add_argument("--sort_sentence_by_length", action="store_true", default=False)
 
 args, unknown = parser.parse_known_args()
@@ -51,11 +50,11 @@ device = torch.device(args.device)
 
 src_data, src_vocab = load_corpus_data(args.src_path, args.src_language, args.start_token, args.end_token,
                                        args.mask_token, args.src_vocab_path, args.rebuild_vocab, args.unk,
-                                       args.threshold, args.normalize)
+                                       args.threshold)
 
 tgt_data, tgt_vocab = load_corpus_data(args.tgt_path, args.tgt_language, args.start_token, args.end_token,
                                        args.mask_token, args.tgt_vocab_path, args.rebuild_vocab, args.unk,
-                                       args.threshold, args.normalize)
+                                       args.threshold)
 
 print("Source language vocab size: {}".format(len(src_vocab)))
 print("Target language vocab size: {}".format(len(tgt_vocab)))
@@ -133,5 +132,8 @@ for i in range(args.start_epoch, args.end_epoch):
 
     epoch_loss /= steps
 
+    epoch_ppl = math.exp(epoch_loss)
+
     torch.save(save_transformer(s2s, optimizer, args), args.checkpoint + "__{}_{:.6f}".format(i, epoch_loss))
-    print("Epoch: {}, time: {} seconds, loss: {}".format(i, time.time() - start_time, epoch_loss))
+    print("Epoch: {}, time: {} seconds, loss: {}, perplexity: {}".format(i, time.time() - start_time, epoch_loss,
+                                                                         epoch_ppl))
