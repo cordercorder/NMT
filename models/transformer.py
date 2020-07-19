@@ -319,6 +319,10 @@ class S2S(nn.Module):
         batch_loss = criterion(output.transpose(1, 2), target_batch)
 
         optimizer.zero_grad()
+
+        # synchronize all processes when use multi GPU
+        torch.distributed.barrier()
+
         batch_loss.backward()
         optimizer.step()
 

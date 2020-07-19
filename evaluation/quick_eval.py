@@ -71,3 +71,5 @@ for model_path in glob.glob(args.model_prefix + "*"):
     bleu_calculation_command = "perl /data/rrjin/NMT/scripts/multi-bleu.perl {} < {}".format(args.test_tgt_path, p_tok)
 
     call(bleu_calculation_command, shell=True)
+
+    print("")

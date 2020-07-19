@@ -1,6 +1,7 @@
 import sys
 sys.path.append("../")
 
+import os
 import argparse
 import time
 import math
@@ -10,10 +11,11 @@ from torch.utils.data import DataLoader
 from utils.data_loader import load_corpus_data, NMTDataset, collate
 from utils.process import sort_src_sentence_by_length, save_transformer, load_transformer
 from models import transformer
+from utils.TransformerOpt import TransformerOpt
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("--device", required=True, type=int)
+parser.add_argument("--device_id", nargs="+", type=int)
 parser.add_argument("--num_layers", required=True, type=int)
 parser.add_argument("--d_model", required=True, type=int)
 parser.add_argument("--num_heads", required=True, type=int)
@@ -46,8 +48,6 @@ parser.add_argument("--sort_sentence_by_length", action="store_true", default=Fa
 
 args, unknown = parser.parse_known_args()
 
-device = torch.device("cuda", args.device[0])
-
 src_data, src_vocab = load_corpus_data(args.src_path, args.src_language, args.start_token, args.end_token,
                                        args.mask_token, args.src_vocab_path, args.rebuild_vocab, args.unk,
                                        args.threshold)
@@ -74,11 +74,22 @@ padding_value = src_vocab.get_index(args.mask_token)
 
 assert padding_value == tgt_vocab.get_index(args.mask_token)
 
+print("Multi GPU training")
+
+os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(str(idx) for idx in args.device_id)
+torch.distributed.init_process_group(backend="nccl")
+
+local_rank = torch.distributed.get_rank()
+device = torch.device("cuda", local_rank)
+
 if args.load:
 
     print("Load existing model from {}".format(args.load))
     s2s, optimizer_state_dict = load_transformer(args.load, len(src_vocab), max_src_len, len(tgt_vocab), max_tgt_len,
                                                  padding_value, training=True, device=device)
+
+    s2s = nn.parallel.DistributedDataParallel(s2s, device_ids=[local_rank])
+
     optimizer = torch.optim.Adam(s2s.parameters(), args.learning_rate)
     optimizer.load_state_dict(optimizer_state_dict)
 
@@ -94,20 +105,29 @@ else:
 
     s2s.init_parameters()
 
-    optimizer = torch.optim.Adam(s2s.parameters(), args.learning_rate)
+    s2s = nn.parallel.DistributedDataParallel(s2s, device_ids=[local_rank])
+
+    # optimizer = torch.optim.Adam(s2s.parameters(), args.learning_rate)
+    optimizer = TransformerOpt(s2s.parameters(), args.learning_rate)
 
 s2s.train()
 
 criterion = nn.CrossEntropyLoss(ignore_index=padding_value)
 
 train_data = NMTDataset(src_data, tgt_data)
-train_loader = DataLoader(train_data, args.batch_size, shuffle=True,
+
+train_sampler = torch.utils.data.distributed.DistributedSampler(train_data)
+train_loader = DataLoader(train_data, args.batch_size, shuffle=False, sampler=train_sampler, drop_last=True,
                           collate_fn=lambda batch: collate(batch, padding_value, device, batch_first=True))
 
 STEPS = len(range(0, len(src_data), args.batch_size))
 save_model_steps = max(int(STEPS * args.save_model_steps), 1)
 
+torch.distributed.barrier()
+
 for i in range(args.start_epoch, args.end_epoch):
+
+    train_sampler.set_epoch(i)
 
     epoch_loss = 0.0
 
@@ -119,21 +139,26 @@ for i in range(args.start_epoch, args.end_epoch):
 
     for j, (input_batch, target_batch) in enumerate(train_loader):
 
-        batch_loss = s2s.train_batch(input_batch, target_batch, criterion, optimizer)
+        batch_loss = s2s.module.train_batch(input_batch, target_batch, criterion, optimizer)
 
         epoch_loss += batch_loss
 
         steps += 1
 
         if steps % save_model_steps == 0:
-            torch.save(save_transformer(s2s, optimizer, args), args.checkpoint + "_" + str(i) + "_" + str(steps))
+            if local_rank == 0:
+                torch.save(save_transformer(s2s, optimizer, args), args.checkpoint + "_" + str(i) + "_" + str(steps))
             ppl = math.exp(batch_loss)
-            print("Batch loss: {}, batch perplexity: {}".format(batch_loss, ppl))
+            print("Batch loss: {}, batch perplexity: {}, local rank: {}".format(batch_loss, ppl, local_rank))
 
     epoch_loss /= steps
 
     epoch_ppl = math.exp(epoch_loss)
 
-    torch.save(save_transformer(s2s, optimizer, args), args.checkpoint + "__{}_{:.6f}".format(i, epoch_loss))
-    print("Epoch: {}, time: {} seconds, loss: {}, perplexity: {}".format(i, time.time() - start_time, epoch_loss,
-                                                                         epoch_ppl))
+    print("Epoch: {}, time: {} seconds, loss: {}, perplexity: {}, local rank{}".format(i, time.time() - start_time,
+                                                                                       epoch_loss, epoch_ppl,
+                                                                                       local_rank))
+    if local_rank == 0:
+        torch.save(save_transformer(s2s, optimizer, args), args.checkpoint + "__{}_{:.6f}".format(i, epoch_loss))
+
+torch.save(save_transformer(s2s, optimizer, args), args.checkpoint + "_rank{}".format(local_rank))

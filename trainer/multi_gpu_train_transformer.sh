@@ -1,5 +1,5 @@
-python -u train_transformer.py \
-    --device_id 1 \
+python -m torch.distributed.launch --nproc_per_node=3 multi_gpu_train_transformer.py \
+    --device_id 1 2 3 \
     --num_layers 6 \
     --d_model 512 \
     --num_heads 8 \
@@ -10,7 +10,8 @@ python -u train_transformer.py \
     --tgt_path /data/rrjin/NMT/tmpdata/train_tgt_tok.en \
     --src_vocab_path /data/rrjin/NMT/tmpdata/src2.spa.vocab \
     --tgt_vocab_path /data/rrjin/NMT/tmpdata/tgt2.en.vocab \
-    --checkpoint /data/rrjin/NMT/tmpdata/test_transformer_multi_gpu2 \
+    --checkpoint /data/rrjin/NMT/tmpdata/test_transformer_multi_gpu3 \
     --dropout 0.1 \
     --rebuild_vocab \
-    --learning_rate 0.00005
+    --learning_rate 0.0001 \
+    --end_epoch 15
