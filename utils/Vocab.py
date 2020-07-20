@@ -176,9 +176,11 @@ class Vocab:
             start_token = entity["start_token"]
             end_token = entity["end_token"]
 
+            # This is a fix for early bugs, since I forget save the mask token
+            # when saving the vocabulary
             try:
                 mask_token = entity["mask_token"]
-            except IndexError:
+            except KeyError:
                 mask_token = "<mask>"
 
             threshold = entity["threshold"]

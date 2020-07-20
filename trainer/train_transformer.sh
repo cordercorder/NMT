@@ -1,16 +1,17 @@
 python -u train_transformer.py \
-    --device_id 1 \
+    --device cuda:1 \
     --num_layers 6 \
     --d_model 512 \
     --num_heads 8 \
     --d_ff 2048 \
-    --src_language spa \
+    --src_language combine \
     --tgt_language en \
-    --src_path /data/rrjin/NMT/tmpdata/train_src_tok.spa \
-    --tgt_path /data/rrjin/NMT/tmpdata/train_tgt_tok.en \
-    --src_vocab_path /data/rrjin/NMT/tmpdata/src2.spa.vocab \
-    --tgt_vocab_path /data/rrjin/NMT/tmpdata/tgt2.en.vocab \
-    --checkpoint /data/rrjin/NMT/tmpdata/test_transformer_multi_gpu2 \
+    --src_path /data/rrjin/corpus_data/lang_vec_data/bible-corpus/train_data/train_src_combine_bpe_32000.txt \
+    --tgt_path /data/rrjin/corpus_data/lang_vec_data/bible-corpus/train_data/train_tgt_en_bpe_32000.txt \
+    --src_vocab_path /data/rrjin/NMT/data/src_combine_32000_transformer.vocab \
+    --tgt_vocab_path /data/rrjin/NMT/data/tgt_en_32000_transformer.vocab \
+    --checkpoint /data/rrjin/NMT/data/models/transformer_single_gpu \
     --dropout 0.1 \
     --rebuild_vocab \
-    --learning_rate 0.00005
+    --learning_rate 0.00005 \
+    --batch_size 64

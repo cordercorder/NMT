@@ -124,8 +124,6 @@ def greedy_decoding_rnn(s2s, line, src_vocab, tgt_vocab, device):
 
         pred_line.append(tgt_vocab.get_token(pred[0, 0].item()))
 
-    pred_line = [tgt_vocab.get_token(index) for index in pred_line]
-
     return pred_line
 
 

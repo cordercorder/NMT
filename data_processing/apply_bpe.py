@@ -18,7 +18,8 @@ apply_bpe_file = ["train_src_combine.txt", "dev_src_combine.txt", "test_src_comb
 
 
 command_learn_bpe = "subword-nmt learn-joint-bpe-and-vocab --input {} {} -s {} -o {} --write-vocabulary {} {}".format(
-                    learn_bpe_file_path[0], learn_bpe_file_path[1], num_operations, codes_file_path, src_vocab_path, tgt_vocab_path)
+                    learn_bpe_file_path[0], learn_bpe_file_path[1], num_operations, codes_file_path, src_vocab_path,
+                    tgt_vocab_path)
 
 subprocess.call(command_learn_bpe, shell=True)
 print(command_learn_bpe)

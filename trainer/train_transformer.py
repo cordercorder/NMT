@@ -13,7 +13,7 @@ from models import transformer
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("--device", required=True, type=int)
+parser.add_argument("--device", required=True)
 parser.add_argument("--num_layers", required=True, type=int)
 parser.add_argument("--d_model", required=True, type=int)
 parser.add_argument("--num_heads", required=True, type=int)
@@ -46,7 +46,7 @@ parser.add_argument("--sort_sentence_by_length", action="store_true", default=Fa
 
 args, unknown = parser.parse_known_args()
 
-device = torch.device("cuda", args.device[0])
+device = args.device
 
 src_data, src_vocab = load_corpus_data(args.src_path, args.src_language, args.start_token, args.end_token,
                                        args.mask_token, args.src_vocab_path, args.rebuild_vocab, args.unk,
