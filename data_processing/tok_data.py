@@ -1,7 +1,7 @@
 import sys
 sys.path.append("../")
 
-from utils.process import read_data, write_data, normalizeString
+from utils.tools import read_data, write_data, normalizeString
 import argparse
 
 parser = argparse.ArgumentParser()

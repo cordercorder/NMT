@@ -138,7 +138,7 @@ class IndividualBPE:
 def main():
 
     prefix = "/data/rrjin/corpus_data/lang_vec_data/bible-corpus/train_data"
-    num_operations = 20000
+    num_operations = 22000
     train_file_src_path = os.path.join(prefix, "train_src_combine.txt")
     train_file_tgt_path = os.path.join(prefix, "train_tgt_en.txt")
 

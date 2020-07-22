@@ -202,8 +202,7 @@ def read_data(data_path):
         return data
 
 
-if __name__ == "__main__":
-
+def test_tools():
     print(unicodeToAscii("Ślusàrski  "))
 
     s = "¿Puedo     omar    prestado este libro? \" "
@@ -212,3 +211,6 @@ if __name__ == "__main__":
 
     s = "tom prefers his dirty and and a \" . . . . . . . . . . . . \" . . \" \""
     print(normalizeString((s)))
+
+if __name__ == "__main__":
+    test_tools()

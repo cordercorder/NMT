@@ -1,6 +1,6 @@
 import os
 import random
-from utils.process import normalizeString
+from utils.tools import normalizeString
 
 source_dir = "/data/rrjin/corpus_data/lang_vec_data/bible-corpus/parallel_text"
 output_dir = "/data/rrjin/corpus_data/lang_vec_data/bible-corpus/train_data"

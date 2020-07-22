@@ -1,6 +1,6 @@
 import glob
 import argparse
-from utils.process import read_data, load_model, load_transformer, write_data
+from utils.tools import read_data, load_model, load_transformer, write_data
 from utils.Vocab import Vocab
 from evaluation.S2S_translation import greedy_decoding
 import os
@@ -19,10 +19,23 @@ parser.add_argument("--transformer", action="store_true", default=False)
 
 args, unknown = parser.parse_known_args()
 
+
+# this code is a fix for vocabulary of older version
+def remove_bpe_sep(line):
+    return "".join(c for c in line if c != "@")
+# ------------------------------------------------ #
+
+
 src_vocab = Vocab.load(args.src_vocab_path)
 tgt_vocab = Vocab.load(args.tgt_vocab_path)
 
 src_data = read_data(args.test_src_path)
+
+
+# this code is a fix for vocabulary of older version
+src_data = [remove_bpe_sep(line) for line in src_data]
+# ------------------------------------------------ #
+
 
 device = args.device
 

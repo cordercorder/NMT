@@ -1,16 +1,10 @@
-from collections import defaultdict
 import matplotlib.pyplot as plt
+import os
+from collections import defaultdict
+import sys
+sys.path.append("../")
+from utils.tools import read_data
 
-src_path = "/data/rrjin/corpus_data/lang_vec_data/bible-corpus/train_data/train_src_combine_bpe_32000.txt"
-tgt_path = "/data/rrjin/corpus_data/lang_vec_data/bible-corpus/train_data/train_tgt_en_bpe_32000.txt"
-
-def read_data(data_path):
-
-    with open(data_path) as f:
-
-        data = f.read().split("\n")
-        data = ["".join(c for c in line if c != "@") for line in data]
-        return data
 
 def frequency(data):
 
@@ -22,6 +16,7 @@ def frequency(data):
 
     return freq
 
+
 def sort_freq(freq_data):
 
     freq_data = sorted(freq_data.items(), key=lambda item: -item[0])
@@ -29,10 +24,12 @@ def sort_freq(freq_data):
 
     return freq_data
 
+
 def sort_sentence(data):
 
     data.sort(key=lambda item: -len(item))
     return data
+
 
 def plot_freq(freq_data, fig_name):
 
@@ -40,7 +37,7 @@ def plot_freq(freq_data, fig_name):
 
     fig = plt.figure()
 
-    idx = fig_name.find(".") + 1
+    idx = fig_name.rfind(".") + 1
     name = fig_name[:idx]
 
     ax = fig.add_subplot(1, 1, 1)
@@ -53,29 +50,42 @@ def plot_freq(freq_data, fig_name):
     plt.legend()
     plt.savefig("./" + fig_name)
 
-src_data = sort_sentence(read_data(src_path))
-tgt_data = sort_sentence(read_data(tgt_path))
 
-print(src_data[:5])
-print(tgt_data[:5])
+def main():
 
-src_freq = frequency(src_data)
-tgt_freq = frequency(tgt_data)
+    src_path = "/data/rrjin/NMT/data/bible_data/train_src_combine_joint_bpe_22000.txt"
+    tgt_path = "/data/rrjin/NMT/data/bible_data/train_tgt_en_joint_bpe_22000.txt"
 
-src_freq = sort_freq(src_freq)
-tgt_freq = sort_freq(tgt_freq)
+    src_data = sort_sentence(read_data(src_path))
+    tgt_data = sort_sentence(read_data(tgt_path))
 
-plot_freq(src_freq, "statistic of src bible.jpg")
-plot_freq(tgt_freq, "statistic of tgt bible.jpg")
+    print(src_data[:5])
+    print(tgt_data[:5])
 
-sentence_number = len(src_data)
+    src_freq = frequency(src_data)
+    tgt_freq = frequency(tgt_data)
 
-cnt = 0
+    src_freq = sort_freq(src_freq)
+    tgt_freq = sort_freq(tgt_freq)
 
-for length, freq in src_freq:
+    _, src_file_name = os.path.split(src_path)
+    _, tgt_file_name = os.path.split(tgt_path)
 
-    if length <= 500:
-        cnt += 1
+    plot_freq(src_freq, "statistic of " + src_file_name + ".jpg")
+    plot_freq(tgt_freq, "statistic of " + tgt_file_name + ".jpg")
 
-print(cnt)
-print(sentence_number)
+    sentence_number = len(src_data)
+
+    cnt = 0
+
+    for length, freq in src_freq:
+
+        if length <= 500:
+            cnt += 1
+
+    print(cnt)
+    print(sentence_number)
+
+
+if __name__ == "__main__":
+    main()

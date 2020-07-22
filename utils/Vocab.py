@@ -1,5 +1,5 @@
 from collections import defaultdict, OrderedDict
-from utils.process import normalizeString
+from utils.tools import normalizeString
 import pickle
 import os
 

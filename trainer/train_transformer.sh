@@ -1,16 +1,16 @@
 python -u train_transformer.py \
-    --device cuda:1 \
+    --device cuda:3 \
     --num_layers 6 \
     --d_model 512 \
     --num_heads 8 \
     --d_ff 2048 \
     --src_language combine \
     --tgt_language en \
-    --src_path /data/rrjin/corpus_data/lang_vec_data/bible-corpus/train_data/train_src_combine_bpe_32000.txt \
-    --tgt_path /data/rrjin/corpus_data/lang_vec_data/bible-corpus/train_data/train_tgt_en_bpe_32000.txt \
-    --src_vocab_path /data/rrjin/NMT/data/src_combine_32000_transformer.vocab \
-    --tgt_vocab_path /data/rrjin/NMT/data/tgt_en_32000_transformer.vocab \
-    --checkpoint /data/rrjin/NMT/data/models/transformer_single_gpu \
+    --src_path /data/rrjin/NMT/data/bible_data/corpus/train_src_combine_joint_bpe_22000_filtered.txt \
+    --tgt_path /data/rrjin/NMT/data/bible_data/corpus/train_tgt_en_joint_bpe_22000_filtered.txt \
+    --src_vocab_path /data/rrjin/NMT/data/bible_data/vocab_data/src_combine_32000_transformer.vocab \
+    --tgt_vocab_path /data/rrjin/NMT/data/bible_data/vocab_data/tgt_en_32000_transformer.vocab \
+    --checkpoint /data/rrjin/NMT/data/bible_data/models/bible_transformer_single_gpu \
     --dropout 0.1 \
     --rebuild_vocab \
     --learning_rate 0.00005 \

@@ -1,10 +1,9 @@
 import argparse
 import torch
 from utils.Vocab import Vocab
-from utils.process import load_model
-from utils.process import read_data, write_data
+from utils.tools import load_model, read_data, write_data
 from evaluation.S2S_translation import get_initial_decoder_hidden_state, decode_batch
-from lang_vec.tools import load_lang_vec
+from lang_vec.lang_vec_tools import load_lang_vec
 from subprocess import call
 
 parser = argparse.ArgumentParser()

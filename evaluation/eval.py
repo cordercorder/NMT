@@ -1,6 +1,6 @@
 import argparse
 from utils.Vocab import Vocab
-from utils.process import load_model, read_data, write_data
+from utils.tools import load_model, read_data, write_data
 from nltk.translate.bleu_score import corpus_bleu
 from evaluation.S2S_translation import beam_search_decoding
 

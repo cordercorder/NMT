@@ -1,6 +1,6 @@
 cd ..
 
-python -m lang_vec.rnn_basic \
+python -m lang_vec.rnn \
     --device cuda:2 \
     --load /data/rrjin/NMT/data/models/basic_multi_gpu_lstm__9_3.178944 \
     --src_vocab_path /data/rrjin/NMT/data/src_combine_32000.vocab \

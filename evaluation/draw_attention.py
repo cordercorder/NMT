@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 import argparse
 from utils.Vocab import Vocab
-from utils.process import normalizeString, load_model
+from utils.tools import normalizeString, load_model
 from models import S2S_attention
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker

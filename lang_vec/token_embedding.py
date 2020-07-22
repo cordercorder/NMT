@@ -1,7 +1,7 @@
 import argparse
 from utils.Vocab import Vocab
-from utils.process import load_model, read_data
-from lang_vec.tools import save_lang_vec
+from utils.tools import load_model, read_data
+from lang_vec.lang_vec_tools import save_lang_vec
 import torch
 
 parser = argparse.ArgumentParser()

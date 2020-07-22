@@ -8,7 +8,7 @@ from models import S2S_basic
 from models import S2S_attention
 from utils.data_loader import load_corpus_data, NMTDataset, collate
 from torch.utils.data import DataLoader
-from utils.process import sort_src_sentence_by_length, save_model, load_model
+from utils.tools import sort_src_sentence_by_length, save_model, load_model
 import random
 import time
 import math
