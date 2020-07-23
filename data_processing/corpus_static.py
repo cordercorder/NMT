@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import os
 from collections import defaultdict
@@ -25,12 +27,6 @@ def sort_freq(freq_data):
     return freq_data
 
 
-def sort_sentence(data):
-
-    data.sort(key=lambda item: -len(item))
-    return data
-
-
 def plot_freq(freq_data, fig_name):
 
     length, freq = list(zip(*freq_data))
@@ -49,18 +45,18 @@ def plot_freq(freq_data, fig_name):
     plt.grid()
     plt.legend()
     plt.savefig("./" + fig_name)
+    plt.close()
 
 
 def main():
 
-    src_path = "/data/rrjin/NMT/data/bible_data/train_src_combine_joint_bpe_22000.txt"
-    tgt_path = "/data/rrjin/NMT/data/bible_data/train_tgt_en_joint_bpe_22000.txt"
+    max_sentence_num = 100
 
-    src_data = sort_sentence(read_data(src_path))
-    tgt_data = sort_sentence(read_data(tgt_path))
+    src_path = "/data/rrjin/NMT/data/bible_data/corpus/train_src_combine_joint_bpe_22000.txt"
+    tgt_path = "/data/rrjin/NMT/data/bible_data/corpus/train_tgt_en_joint_bpe_22000.txt"
 
-    print(src_data[:5])
-    print(tgt_data[:5])
+    src_data = read_data(src_path)
+    tgt_data = read_data(tgt_path)
 
     src_freq = frequency(src_data)
     tgt_freq = frequency(tgt_data)
@@ -80,8 +76,8 @@ def main():
 
     for length, freq in src_freq:
 
-        if length <= 500:
-            cnt += 1
+        if length <= max_sentence_num:
+            cnt += freq
 
     print(cnt)
     print(sentence_number)

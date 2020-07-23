@@ -41,8 +41,8 @@ parser.add_argument("--threshold", default=0, type=int)
 parser.add_argument("--save_model_steps", default=0.3, type=float)
 parser.add_argument("--mask_token", default="<mask>")
 
-parser.add_argument("--rebuild_vocab", action="store_true", default=False)
-parser.add_argument("--sort_sentence_by_length", action="store_true", default=False)
+parser.add_argument("--rebuild_vocab", action="store_true")
+parser.add_argument("--sort_sentence_by_length", action="store_true")
 
 args, unknown = parser.parse_known_args()
 

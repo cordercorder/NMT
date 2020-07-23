@@ -1,4 +1,3 @@
-from collections import defaultdict, OrderedDict
 from utils.tools import normalizeString
 import pickle
 import os
@@ -25,7 +24,7 @@ class Vocab:
 
         self.__token2index = {}
         self.__index2token = {}
-        self.__token_count = defaultdict(lambda: int())
+        self.__token_count = {}
 
         self.unk_token = None
         self.unk_token_index = None
@@ -69,10 +68,9 @@ class Vocab:
         :return: None
         """
 
-        self.__token_count[token] = self.__token_count[token] + 1
+        self.__token_count[token] = self.__token_count.get(token, 0) + 1
 
         if token not in self.__token2index:
-
             num = len(self.__token2index)
             self.__token2index[token] = num
             self.__index2token[num] = token
@@ -112,10 +110,8 @@ class Vocab:
 
         self.unk_token = unk
 
-        self.__token_count = defaultdict(lambda: int(), {
-                                            k: value for k, value in self.__token_count.items()
-                                            if value >= self.threshold
-                                       })
+        self.__token_count = {k: value for k, value in self.__token_count.items()
+                              if value >= self.threshold}
 
         self.__token_count[self.unk_token] = 1
 
@@ -151,7 +147,7 @@ class Vocab:
             "threshold": self.threshold,
             "__token2index": self.__token2index,
             "__index2token": self.__index2token,
-            "__token_count": dict(self.__token_count),
+            "__token_count": self.__token_count,
             "unk_token": self.unk_token,
             "unk_token_index": self.unk_token_index
         }
@@ -186,7 +182,7 @@ class Vocab:
             threshold = entity["threshold"]
             __token2index = entity["__token2index"]
             __index2token = entity["__index2token"]
-            __token_count = defaultdict(lambda: int(), entity["__token_count"])
+            __token_count = entity["__token_count"]
             unk_token = entity["unk_token"]
             unk_token_index = entity["unk_token_index"]
 
