@@ -222,7 +222,7 @@ class S2S(nn.Module):
 
         return decoder_output
 
-    def train_batch(self, input_batch, target_batch, padding_value, criterion, optimizer, use_teacher_forcing):
+    def train_batch(self, input_batch, target_batch, criterion, optimizer, use_teacher_forcing):
 
         # input_batch: (input_length, batch_size)
         # target_batch: (input_length, batch_size)

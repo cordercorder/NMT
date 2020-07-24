@@ -1,4 +1,4 @@
-python -m torch.distributed.launch --nproc_per_node=3 multi_gpu_train_transformer.py \
+python -m trainer.multi_gpu_train_transformer \
     --device_id 1 2 3 \
     --num_layers 6 \
     --d_model 512 \
@@ -13,5 +13,5 @@ python -m torch.distributed.launch --nproc_per_node=3 multi_gpu_train_transforme
     --checkpoint /data/rrjin/NMT/tmpdata/test_transformer_multi_gpu3 \
     --dropout 0.1 \
     --rebuild_vocab \
-    --learning_rate 0.0001 \
+    --learning_rate 0.00005 \
     --end_epoch 15

@@ -1,6 +1,4 @@
-import sys
-sys.path.append("../")
-
+import logging
 import argparse
 import torch
 import torch.nn as nn
@@ -12,6 +10,9 @@ from utils.tools import sort_src_sentence_by_length, save_model, load_model
 import random
 import time
 import math
+
+logging.basicConfig(level=logging.DEBUG)
+
 
 parser = argparse.ArgumentParser()
 
@@ -61,8 +62,8 @@ tgt_data, tgt_vocab = load_corpus_data(args.tgt_path, args.tgt_language, args.st
                                        args.mask_token, args.tgt_vocab_path, args.rebuild_vocab, args.unk,
                                        args.threshold)
 
-print("Source language vocab size: {}".format(len(src_vocab)))
-print("Target language vocab size: {}".format(len(tgt_vocab)))
+logging.info("Source language vocab size: {}".format(len(src_vocab)))
+logging.info("Target language vocab size: {}".format(len(tgt_vocab)))
 
 
 assert len(src_data) == len(tgt_data)
@@ -71,7 +72,7 @@ if args.sort_sentence_by_length:
     src_data, tgt_data = sort_src_sentence_by_length(list(zip(src_data, tgt_data)))
 
 if args.load:
-    print("Load existing model from {}".format(args.load))
+    logging.info("Load existing model from {}".format(args.load))
     s2s, optimizer_state_dict = load_model(args.load, training=True, device=device)
     optimizer = torch.optim.Adam(s2s.parameters(), args.learning_rate)
     optimizer.load_state_dict(optimizer_state_dict)
@@ -79,7 +80,7 @@ if args.load:
 else:
     if args.attention_size:
 
-        print("Attention Model")
+        logging.info("Attention Model")
         encoder = S2S_attention.Encoder(args.rnn_type, len(src_vocab), args.embedding_size, args.hidden_size,
                                         args.num_layers,args.dropout, args.bidirectional)
         attention = S2S_attention.BahdanauAttention(2 * args.hidden_size if args.bidirectional else args.hidden_size,
@@ -93,7 +94,7 @@ else:
         s2s = S2S_attention.S2S(encoder, decoder).to(device)
 
     else:
-        print("Basic Model")
+        logging.info("Basic Model")
         encoder = S2S_basic.Encoder(args.rnn_type, len(src_vocab), args.embedding_size, args.hidden_size, args.num_layers,
                                     args.dropout, args.bidirectional)
 
@@ -111,7 +112,7 @@ padding_value = src_vocab.get_index(args.mask_token)
 
 assert padding_value == tgt_vocab.get_index(args.mask_token)
 
-criterion = nn.CrossEntropyLoss(ignore_index=padding_value, reduction="sum")
+criterion = nn.CrossEntropyLoss(ignore_index=padding_value)
 
 train_data = NMTDataset(src_data, tgt_data)
 train_loader = DataLoader(train_data, args.batch_size, shuffle=True,
@@ -128,31 +129,22 @@ for i in range(args.start_epoch, args.end_epoch):
 
     steps = 0
 
-    word_count = 0
-
     use_teacher_forcing_list = [True if random.random() >= args.teacher_forcing_ratio else False for j in range(STEPS)]
 
     for j, (input_batch, target_batch) in enumerate(train_loader):
 
-        batch_loss = s2s.train_batch(input_batch, target_batch, criterion, optimizer,
+        batch_loss = s2s.train_batch(input_batch.to(device), target_batch.to(device), criterion, optimizer,
                                      use_teacher_forcing_list[j])
 
         epoch_loss += batch_loss
 
         steps += 1
 
-        batch_word_count = torch.ne(target_batch, padding_value).sum().item()
-
-        word_count += batch_word_count
-
         if steps % save_model_steps == 0:
 
             torch.save(save_model(s2s, optimizer, args), args.checkpoint + "_" + str(i) + "_" + str(steps))
-            ppl = math.exp(batch_loss / batch_word_count)
-            print("Batch loss: {}, batch perplexity: {}".format(batch_loss, ppl))
-
-
-    epoch_loss /= word_count
+            ppl = math.exp(batch_loss)
+            logging.info("Batch loss: {}, batch perplexity: {}".format(batch_loss, ppl))
 
     torch.save(save_model(s2s, optimizer, args), args.checkpoint + "__{}_{:.6f}".format(i, epoch_loss))
-    print("Epoch: {}, time: {} seconds, loss: {}".format(i, time.time() - start_time, epoch_loss))
+    logging.info("Epoch: {}, time: {} seconds, loss: {}".format(i, time.time() - start_time, epoch_loss))

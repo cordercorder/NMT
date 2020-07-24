@@ -2,6 +2,9 @@ import unicodedata
 import re
 from models import S2S_attention, S2S_basic, transformer
 import torch
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
 
 
 def unicodeToAscii(s):
@@ -124,7 +127,7 @@ def load_model(model_path, training=False, device="cpu"):
 
     if "attention" in model_ckpt:
 
-        print("Attention Model")
+        logging.info("Attention Model")
         encoder = S2S_attention.Encoder(**model_ckpt["encoder"])
         attention = S2S_attention.BahdanauAttention(**model_ckpt["attention"])
         decoder = S2S_attention.AttentionDecoder(**model_ckpt["decoder"], attention=attention)
@@ -132,7 +135,7 @@ def load_model(model_path, training=False, device="cpu"):
 
     else:
 
-        print("Basic Model")
+        logging.info("Basic Model")
         encoder = S2S_basic.Encoder(**model_ckpt["encoder"])
         decoder = S2S_basic.Decoder(**model_ckpt["decoder"])
         s2s = S2S_basic.S2S(encoder, decoder).to(device)

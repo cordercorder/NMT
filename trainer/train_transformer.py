@@ -1,6 +1,4 @@
-import sys
-sys.path.append("../")
-
+import logging
 import argparse
 import time
 import math
@@ -10,6 +8,8 @@ from torch.utils.data import DataLoader
 from utils.data_loader import load_corpus_data, NMTDataset, collate
 from utils.tools import sort_src_sentence_by_length, save_transformer, load_transformer
 from models import transformer
+
+logging.basicConfig(level=logging.DEBUG)
 
 parser = argparse.ArgumentParser()
 
@@ -56,8 +56,8 @@ tgt_data, tgt_vocab = load_corpus_data(args.tgt_path, args.tgt_language, args.st
                                        args.mask_token, args.tgt_vocab_path, args.rebuild_vocab, args.unk,
                                        args.threshold)
 
-print("Source language vocab size: {}".format(len(src_vocab)))
-print("Target language vocab size: {}".format(len(tgt_vocab)))
+logging.info("Source language vocab size: {}".format(len(src_vocab)))
+logging.info("Target language vocab size: {}".format(len(tgt_vocab)))
 
 
 assert len(src_data) == len(tgt_data)
@@ -65,7 +65,7 @@ assert len(src_data) == len(tgt_data)
 if args.sort_sentence_by_length:
     src_data, tgt_data = sort_src_sentence_by_length(list(zip(src_data, tgt_data)))
 
-print("Transformer")
+logging.info("Transformer")
 
 max_src_len = max(len(line) for line in src_data)
 max_tgt_len = max(len(line) for line in tgt_data)
@@ -76,14 +76,14 @@ assert padding_value == tgt_vocab.get_index(args.mask_token)
 
 if args.load:
 
-    print("Load existing model from {}".format(args.load))
+    logging.info("Load existing model from {}".format(args.load))
     s2s, optimizer_state_dict = load_transformer(args.load, len(src_vocab), max_src_len, len(tgt_vocab), max_tgt_len,
                                                  padding_value, training=True, device=device)
     optimizer = torch.optim.Adam(s2s.parameters(), args.learning_rate)
     optimizer.load_state_dict(optimizer_state_dict)
 
 else:
-    print("New model")
+    logging.info("New model")
     encoder = transformer.Encoder(len(src_vocab), max_src_len, args.d_model, args.num_layers, args.num_heads, args.d_ff,
                                   args.dropout, device)
 
@@ -101,8 +101,8 @@ s2s.train()
 criterion = nn.CrossEntropyLoss(ignore_index=padding_value)
 
 train_data = NMTDataset(src_data, tgt_data)
-train_loader = DataLoader(train_data, args.batch_size, shuffle=True,
-                          collate_fn=lambda batch: collate(batch, padding_value, device, batch_first=True))
+train_loader = DataLoader(train_data, args.batch_size, shuffle=True, pin_memory=True,
+                          collate_fn=lambda batch: collate(batch, padding_value, batch_first=True))
 
 STEPS = len(range(0, len(src_data), args.batch_size))
 save_model_steps = max(int(STEPS * args.save_model_steps), 1)
@@ -119,7 +119,7 @@ for i in range(args.start_epoch, args.end_epoch):
 
     for j, (input_batch, target_batch) in enumerate(train_loader):
 
-        batch_loss = s2s.train_batch(input_batch, target_batch, criterion, optimizer)
+        batch_loss = s2s.train_batch(input_batch.to(device), target_batch.to(device), criterion, optimizer)
 
         epoch_loss += batch_loss
 
@@ -128,12 +128,12 @@ for i in range(args.start_epoch, args.end_epoch):
         if steps % save_model_steps == 0:
             torch.save(save_transformer(s2s, optimizer, args), args.checkpoint + "_" + str(i) + "_" + str(steps))
             ppl = math.exp(batch_loss)
-            print("Batch loss: {}, batch perplexity: {}".format(batch_loss, ppl))
+            logging.info("Batch loss: {}, batch perplexity: {}".format(batch_loss, ppl))
 
     epoch_loss /= steps
 
     epoch_ppl = math.exp(epoch_loss)
 
     torch.save(save_transformer(s2s, optimizer, args), args.checkpoint + "__{}_{:.6f}".format(i, epoch_loss))
-    print("Epoch: {}, time: {} seconds, loss: {}, perplexity: {}".format(i, time.time() - start_time, epoch_loss,
-                                                                         epoch_ppl))
+    logging.info("Epoch: {}, time: {} seconds, loss: {}, perplexity: {}".format(i, time.time() - start_time, epoch_loss,
+                                                                                epoch_ppl))

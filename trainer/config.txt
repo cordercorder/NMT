@@ -1,0 +1,75 @@
+python -m trainer.train_transformer \
+    --device cuda:2 \
+    --num_layers 6 \
+    --d_model 512 \
+    --num_heads 8 \
+    --d_ff 2048 \
+    --src_language combine \
+    --tgt_language en \
+    --src_path /data/rrjin/NMT/data/bible_data/corpus/train_src_combine_joint_bpe_22000_filtered.txt \
+    --tgt_path /data/rrjin/NMT/data/bible_data/corpus/train_tgt_en_joint_bpe_22000_filtered.txt \
+    --src_vocab_path /data/rrjin/NMT/data/bible_data/vocab_data/test_src_combine_32000_transformer.vocab \
+    --tgt_vocab_path /data/rrjin/NMT/data/bible_data/vocab_data/test_tgt_en_32000_transformer.vocab \
+    --checkpoint /data/rrjin/NMT/data/bible_data/models/test_bible_transformer_single_gpu \
+    --dropout 0.1 \
+    --rebuild_vocab \
+    --learning_rate 0.00005 \
+    --batch_size 64
+
+
+python -m trainer.multi_gpu_train \
+    --device_id 1 2 3 \
+    --src_language spa \
+    --tgt_language en \
+    --src_path /data/rrjin/NMT/tmpdata/train_src_tok.spa \
+    --tgt_path /data/rrjin/NMT/tmpdata/train_tgt_tok.en \
+    --src_vocab_path /data/rrjin/NMT/tmpdata/test_src.spa2.vocab \
+    --tgt_vocab_path /data/rrjin/NMT/tmpdata/test_tgt.en2.vocab \
+    --rnn_type lstm \
+    --embedding_size 512 \
+    --hidden_size 512 \
+    --num_layers 3 \
+    --checkpoint /data/rrjin/NMT/tmpdata/test_new_attention_multi_gpu_lstm2 \
+    --batch_size 32 \
+    --dropout 0.2 \
+    --rebuild_vocab \
+    --attention_size 512
+
+
+python -m trainer.train \
+    --device cuda:0 \
+    --src_language spa \
+    --tgt_language en \
+    --src_path /data/rrjin/NMT/tmpdata/train_src.spa \
+    --tgt_path /data/rrjin/NMT/tmpdata/train_tgt.en \
+    --src_vocab_path /data/rrjin/NMT/tmpdata/src.spa.vocab \
+    --tgt_vocab_path /data/rrjin/NMT/tmpdata/tgt.en.vocab \
+    --rnn_type lstm \
+    --embedding_size 512 \
+    --hidden_size 512 \
+    --num_layers 3 \
+    --checkpoint /data/rrjin/NMT/tmpdata/test_basic \
+    --batch_size 32 \
+    --dropout 0.1 \
+    --rebuild_vocab \
+    --attention_size 512 \
+    --sort_sentence_by_length
+
+
+python -m trainer.multi_gpu_train_transformer \
+    --device_id 1 2 3 \
+    --num_layers 6 \
+    --d_model 512 \
+    --num_heads 8 \
+    --d_ff 2048 \
+    --src_language spa \
+    --tgt_language en \
+    --src_path /data/rrjin/NMT/tmpdata/train_src_tok.spa \
+    --tgt_path /data/rrjin/NMT/tmpdata/train_tgt_tok.en \
+    --src_vocab_path /data/rrjin/NMT/tmpdata/src2.spa.vocab \
+    --tgt_vocab_path /data/rrjin/NMT/tmpdata/tgt2.en.vocab \
+    --checkpoint /data/rrjin/NMT/tmpdata/test_transformer_multi_gpu3 \
+    --dropout 0.1 \
+    --rebuild_vocab \
+    --learning_rate 0.0001 \
+    --end_epoch 15

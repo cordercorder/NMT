@@ -1,4 +1,6 @@
-python -u train.py \
+cd ..
+
+python -m trainer.train \
     --device cuda:0 \
     --src_language spa \
     --tgt_language en \

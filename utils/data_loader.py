@@ -52,7 +52,7 @@ def load_corpus_data(data_path, language_name, start_token, end_token, mask_toke
     return data2index, v
 
 
-def pad_data(data, padding_value, device, batch_first):
+def pad_data(data, padding_value, batch_first):
 
     data_tensor = []
 
@@ -67,14 +67,14 @@ def pad_data(data, padding_value, device, batch_first):
         for i in range(max_length):
             data_tensor.append([line[i] if i < len(line) else padding_value for line in data])
 
-    return torch.tensor(data_tensor, device=device)
+    return torch.tensor(data_tensor)
 
 
-def collate(batch, padding_value, device, batch_first=False):
+def collate(batch, padding_value, batch_first=False):
 
     src_batch, tgt_batch = zip(*batch)
-    src_batch_tensor = pad_data(src_batch, padding_value, device, batch_first)
-    tgt_batch_tensor = pad_data(tgt_batch, padding_value, device, batch_first)
+    src_batch_tensor = pad_data(src_batch, padding_value, batch_first)
+    tgt_batch_tensor = pad_data(tgt_batch, padding_value, batch_first)
 
     return src_batch_tensor, tgt_batch_tensor
 
