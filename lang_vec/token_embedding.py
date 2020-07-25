@@ -25,7 +25,7 @@ lang_vec = {}
 
 for lang_token in lang_token_list:
 
-    assert lang_token in src_vocab._Vocab__token2index
+    assert lang_token in src_vocab
 
     index = src_vocab.get_index(lang_token)
 

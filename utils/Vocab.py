@@ -53,11 +53,7 @@ class Vocab:
         :return: the token which id is equal to index. type: str
         """
         if index not in self.__index2token:
-
-            if self.unk_token is None:
-                raise Exception("Index not found")
-            else:
-                return self.unk_token
+            raise Exception("Index not found")
 
         return self.__index2token.get(index)
 
@@ -164,7 +160,7 @@ class Vocab:
         """
 
         if not os.path.isfile(load_path):
-            raise Exception("The vocab path do not exit")
+            raise Exception("The vocab path does not exit")
 
         with open(load_path, "rb") as f:
             entity = pickle.load(f)
@@ -217,3 +213,7 @@ class Vocab:
             s = ", ".join(tmp_key)
 
         return s
+
+    def __contains__(self, item):
+
+        return item in self.__index2token
