@@ -122,9 +122,9 @@ def train(local_rank, args):
 
         epoch_ppl = math.exp(epoch_loss)
 
-        logging.info("Epoch: {}, time: {} seconds, loss: {}, perplexity: {}, local rank{}".format(i, time.time() - start_time,
-                                                                                                  epoch_loss, epoch_ppl,
-                                                                                                  local_rank))
+        logging.info("Epoch: {}, time: {} seconds, loss: {}, perplexity: {}, local rank: {}".format(i, time.time() - start_time,
+                                                                                                    epoch_loss, epoch_ppl,
+                                                                                                    local_rank))
         if local_rank == 0:
             torch.save(save_transformer(s2s, optimizer, args), args.checkpoint + "__{}_{:.6f}".format(i, epoch_loss))
 

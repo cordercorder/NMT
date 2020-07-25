@@ -6,48 +6,9 @@ from evaluation.S2S_translation import get_initial_decoder_hidden_state, decode_
 from lang_vec.lang_vec_tools import load_lang_vec
 from subprocess import call
 
-parser = argparse.ArgumentParser()
-
-parser.add_argument("--device", required=True)
-parser.add_argument("--load", required=True)
-parser.add_argument("--src_vocab_path", required=True)
-parser.add_argument("--tgt_vocab_path", required=True)
-parser.add_argument("--test_src_path", required=True)
-parser.add_argument("--test_tgt_path", required=True)
-parser.add_argument("--lang_vec_path", required=True)
-parser.add_argument("--translation_output", required=True)
-
-args, unknown = parser.parse_known_args()
-
-src_vocab = Vocab.load(args.src_vocab_path)
-tgt_vocab = Vocab.load(args.tgt_vocab_path)
-
-src_data = read_data(args.test_src_path)
-tgt_data = read_data(args.test_tgt_path)
-
-lang_vec = load_lang_vec(args.lang_vec_path) # lang_vec: dict
-
-tmp_tgt_output = "/data/rrjin/corpus_data/lang_vec_data/bible-corpus/train_data/test_tgt_en_bpe_32000_remove_at.txt"
-
-device = args.device
-
-s2s = load_model(args.load, device=device)
-
-s2s.eval()
-
-
-def remove_bpe_sep(line):
-    return "".join(c for c in line if c != "@")
-
-
-src_data = [remove_bpe_sep(line) for line in src_data]
-tgt_data = [remove_bpe_sep(line) for line in tgt_data]
-
-write_data(tgt_data, tmp_tgt_output)
-
 
 @torch.no_grad()
-def translate(line):
+def translate(line, s2s, src_vocab, tgt_vocab, lang_vec, device):
 
     line = " ".join([src_vocab.start_token, line, src_vocab.end_token])
 
@@ -100,17 +61,48 @@ def translate(line):
     return pred_line
 
 
-pred_data = []
-for line in src_data:
-    pred_data.append(translate(line))
+def main():
+    parser = argparse.ArgumentParser()
 
-write_data(pred_data, args.translation_output)
+    parser.add_argument("--device", required=True)
+    parser.add_argument("--load", required=True)
+    parser.add_argument("--src_vocab_path", required=True)
+    parser.add_argument("--tgt_vocab_path", required=True)
+    parser.add_argument("--test_src_path", required=True)
+    parser.add_argument("--test_tgt_path", required=True)
+    parser.add_argument("--lang_vec_path", required=True)
+    parser.add_argument("--translation_output", required=True)
 
-pred_data_tok_path = args.translation_output + ".tok"
+    args, unknown = parser.parse_known_args()
 
-tok_command = "sed -r 's/(@@ )|(@@ ?$)//g' {} > {}".format(args.translation_output, pred_data_tok_path)
-call(tok_command, shell=True)
+    src_vocab = Vocab.load(args.src_vocab_path)
+    tgt_vocab = Vocab.load(args.tgt_vocab_path)
 
-bleu_calculation_command = "perl /data/rrjin/NMT/scripts/multi-bleu.perl {} < {}".format(tmp_tgt_output,
-                                                                                         pred_data_tok_path)
-call(bleu_calculation_command, shell=True)
+    src_data = read_data(args.test_src_path)
+
+    lang_vec = load_lang_vec(args.lang_vec_path)  # lang_vec: dict
+
+    device = args.device
+
+    s2s = load_model(args.load, device=device)
+
+    s2s.eval()
+
+    pred_data = []
+    for line in src_data:
+        pred_data.append(translate(line, s2s, src_vocab, tgt_vocab, lang_vec, device))
+
+    write_data(pred_data, args.translation_output)
+
+    pred_data_tok_path = args.translation_output + ".tok"
+
+    tok_command = "sed -r 's/(@@ )|(@@ ?$)//g' {} > {}".format(args.translation_output, pred_data_tok_path)
+    call(tok_command, shell=True)
+
+    bleu_calculation_command = "perl /data/rrjin/NMT/scripts/multi-bleu.perl {} < {}".format(args.test_tgt_path,
+                                                                                             pred_data_tok_path)
+    call(bleu_calculation_command, shell=True)
+
+
+if __name__ == "__main__":
+    main()

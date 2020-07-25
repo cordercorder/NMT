@@ -321,7 +321,7 @@ class S2S(nn.Module):
         optimizer.zero_grad()
 
         # synchronize all processes when use multi GPU
-        # torch.distributed.barrier()
+        torch.distributed.barrier()
 
         batch_loss.backward()
         optimizer.step()

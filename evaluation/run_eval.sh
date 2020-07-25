@@ -1,3 +1,1 @@
-cd ..
-
-nohup bash evaluation/quick_eval.sh >> logs/test_multi_gpu2_transformer_eval_logs.txt 2>&1 &
+nohup bash quick_eval.sh > ../logs/attention_model/attention_eval_bible_logs.txt 2>&1 &

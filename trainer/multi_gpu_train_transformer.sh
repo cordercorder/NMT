@@ -1,3 +1,5 @@
+cd ..
+
 python -m trainer.multi_gpu_train_transformer \
     --device_id 1 2 3 \
     --num_layers 6 \
@@ -13,5 +15,5 @@ python -m trainer.multi_gpu_train_transformer \
     --checkpoint /data/rrjin/NMT/tmpdata/test_transformer_multi_gpu3 \
     --dropout 0.1 \
     --rebuild_vocab \
-    --learning_rate 0.00005 \
+    --learning_rate 0.000029 \
     --end_epoch 15
