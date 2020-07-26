@@ -3,6 +3,7 @@ import argparse
 import torch
 import torch.nn as nn
 import torch.multiprocessing as mp
+import torch.distributed as dist
 from models import S2S_basic
 from models import S2S_attention
 from utils.data_loader import load_corpus_data, NMTDataset, collate
@@ -119,9 +120,26 @@ def train(local_rank, args):
 
         for j, (input_batch, target_batch) in enumerate(train_loader):
 
-            batch_loss = s2s.module.train_batch(input_batch.to(device, non_blocking=True),
-                                                target_batch.to(device, non_blocking=True), criterion,
-                                                optimizer, use_teacher_forcing_list[j])
+            input_batch = input_batch.to(device, non_blocking=True)
+            target_batch = target_batch.to(device, non_blocking=True)
+
+            output = s2s(input_batch, target_batch, use_teacher_forcing_list[j])
+
+            # output: (input_length - 1, batch_size, vocab_size)
+            output = torch.stack(output, dim=0)
+
+            # output: (batch_size, vocab_size, input_length - 1)
+            # target: (batch_size, input_length - 1)
+            batch_loss = criterion(output.permute(1, 2, 0), target_batch[1:].transpose(0, 1))
+
+            optimizer.zero_grad()
+            # synchronize all processes
+            dist.barrier()
+
+            batch_loss.backward()
+            optimizer.step()
+
+            batch_loss = batch_loss.item()
 
             epoch_loss += batch_loss
             steps += 1

@@ -6,6 +6,7 @@ import math
 import torch
 import torch.nn as nn
 import torch.multiprocessing as mp
+import torch.distributed as dist
 from torch.utils.data import DataLoader
 from utils.data_loader import load_corpus_data, NMTDataset, collate
 from utils.tools import sort_src_sentence_by_length, save_transformer, load_transformer
@@ -46,8 +47,8 @@ def train(local_rank, args):
 
     logging.info("Multi GPU training")
 
-    torch.distributed.init_process_group(backend="nccl", init_method=args.init_method, rank=rank,
-                                         world_size=args.world_size)
+    dist.init_process_group(backend="nccl", init_method=args.init_method, rank=rank,
+                            world_size=args.world_size)
 
     device = torch.device("cuda", local_rank)
 
@@ -106,7 +107,25 @@ def train(local_rank, args):
 
         for j, (input_batch, target_batch) in enumerate(train_loader):
 
-            batch_loss = s2s.module.train_batch(input_batch.to(device), target_batch.to(device), criterion, optimizer)
+            input_batch = input_batch.to(device, no_blocking=True)
+            target_batch = target_batch.to(device, no_blocking=True)
+
+            output = s2s(input_batch, target_batch[:, :-1])
+
+            target_batch = target_batch[:, 1:]
+
+            batch_loss = criterion(output.transpose(1, 2), target_batch)
+
+            optimizer.zero_grad()
+
+            # synchronize all processes
+            dist.barrier()
+
+            batch_loss.backward()
+
+            optimizer.step()
+
+            batch_loss = batch_loss.item()
 
             epoch_loss += batch_loss
 

@@ -305,6 +305,8 @@ class S2S(nn.Module):
 
     def train_batch(self, input_batch, target_batch, criterion, optimizer, use_teacher_forcing):
 
+        """training api used only for single GPU"""
+
         # input_batch: (input_length, batch_size)
         # target_batch: (input_length, batch_size)
 

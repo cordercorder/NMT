@@ -308,6 +308,8 @@ class S2S(nn.Module):
 
     def train_batch(self, input_batch, target_batch, criterion, optimizer):
 
+        """training api used only for single GPU"""
+
         # input_batch: (batch_size, src_input_length)
         # target_batch: (batch_size, tgt_input_length)
 
@@ -319,9 +321,6 @@ class S2S(nn.Module):
         batch_loss = criterion(output.transpose(1, 2), target_batch)
 
         optimizer.zero_grad()
-
-        # synchronize all processes when use multi GPU
-        torch.distributed.barrier()
 
         batch_loss.backward()
         optimizer.step()
