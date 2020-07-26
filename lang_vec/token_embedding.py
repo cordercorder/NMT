@@ -27,6 +27,8 @@ for lang_token in lang_token_list:
 
     assert lang_token in src_vocab
 
+    print(lang_token)
+
     index = src_vocab.get_index(lang_token)
 
     with torch.no_grad():

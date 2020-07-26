@@ -66,21 +66,27 @@ def greedy_decoding_transformer(s2s, line, src_vocab, tgt_vocab, device):
     tgt_list = [tgt_vocab.get_index(tgt_vocab.start_token)]
     max_length = (src.size(1) - 2) * 3
 
+    tgt = None
+
     for i in range(max_length):
 
         # tgt: (1, i + 1)
-        tgt = torch.tensor([tgt_list], device=device)
+        if tgt is None:
+            tgt = torch.tensor([tgt_list], device=device)
+
         tgt_mask = s2s.make_tgt_mask(tgt)
 
         output = s2s.decoder(tgt, encoder_src, tgt_mask, src_mask)
 
         # (1, tgt_input_length)
-        pred = torch.argmax(output, dim=-1)[0, -1].item()
+        pred = torch.argmax(output, dim=-1)[0, -1]
 
-        if tgt_vocab.get_token(pred) == tgt_vocab.end_token:
+        if tgt_vocab.get_token(pred.item()) == tgt_vocab.end_token:
             break
 
-        tgt_list.append(pred)
+        tgt = torch.cat([tgt, pred.unsqueeze(0).unsqueeze(1)], dim=1)
+
+        tgt_list.append(pred.item())
 
     pred_line = [tgt_vocab.get_token(index) for index in tgt_list[1:]]
     return pred_line

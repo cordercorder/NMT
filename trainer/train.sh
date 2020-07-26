@@ -1,7 +1,7 @@
 cd ..
 
 python -m trainer.train \
-    --device cuda:0 \
+    --device cuda:3 \
     --src_language spa \
     --tgt_language en \
     --src_path /data/rrjin/NMT/tmpdata/train_src.spa \

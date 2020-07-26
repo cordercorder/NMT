@@ -216,4 +216,11 @@ class Vocab:
 
     def __contains__(self, item):
 
-        return item in self.__index2token
+        if isinstance(item, str):
+            return item in self.__token2index
+
+        elif isinstance(item, int):
+            return item in self.__index2token
+
+        else:
+            raise Exception("Unknown item type")
