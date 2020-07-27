@@ -224,3 +224,8 @@ class Vocab:
 
         else:
             raise Exception("Unknown item type")
+
+    def __iter__(self):
+
+        for token in self.__token2index:
+            yield token

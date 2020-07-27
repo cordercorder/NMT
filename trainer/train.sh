@@ -4,8 +4,8 @@ python -m trainer.train \
     --device cuda:3 \
     --src_language spa \
     --tgt_language en \
-    --src_path /data/rrjin/NMT/tmpdata/train_src.spa \
-    --tgt_path /data/rrjin/NMT/tmpdata/train_tgt.en \
+    --src_path /data/rrjin/NMT/tmpdata/train_src_tok.spa \
+    --tgt_path /data/rrjin/NMT/tmpdata/train_tgt_tok.en \
     --src_vocab_path /data/rrjin/NMT/tmpdata/src.spa.vocab \
     --tgt_vocab_path /data/rrjin/NMT/tmpdata/tgt.en.vocab \
     --rnn_type lstm \

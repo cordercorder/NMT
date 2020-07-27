@@ -6,14 +6,13 @@ python -m trainer.train_transformer \
     --d_model 512 \
     --num_heads 8 \
     --d_ff 2048 \
-    --src_language combine \
+    --src_language spa \
     --tgt_language en \
-    --src_path /data/rrjin/NMT/data/bible_data/corpus/train_src_combine_joint_bpe_22000_filtered.txt \
-    --tgt_path /data/rrjin/NMT/data/bible_data/corpus/train_tgt_en_joint_bpe_22000_filtered.txt \
-    --src_vocab_path /data/rrjin/NMT/data/bible_data/vocab_data/test_src_combine_32000_transformer.vocab \
-    --tgt_vocab_path /data/rrjin/NMT/data/bible_data/vocab_data/test_tgt_en_32000_transformer.vocab \
-    --checkpoint /data/rrjin/NMT/data/bible_data/models/test_bible_transformer_single_gpu \
+    --src_path /data/rrjin/NMT/tmpdata/train_src_tok.spa \
+    --tgt_path /data/rrjin/NMT/tmpdata/train_tgt_tok.en \
+    --src_vocab_path /data/rrjin/NMT/tmpdata/src.spa.vocab \
+    --tgt_vocab_path /data/rrjin/NMT/tmpdata/tgt.en.vocab \
+    --checkpoint /data/rrjin/NMT/tmpdata/test_transformer \
     --dropout 0.1 \
     --rebuild_vocab \
-    --learning_rate 0.00005 \
-    --batch_size 64
+    --learning_rate 0.00005

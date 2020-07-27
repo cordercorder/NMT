@@ -1,1 +1,202 @@
-[{"model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_4_60588", "bleu": 18.93, "bleu_details": "bleu = 18.93, 44.6/22.4/16.2/13.8 (bp=0.870, ratio=0.878, hyp_len=251053, ref_len=285876)"}, {"model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu__4_0.232873", "bleu": 18.07, "bleu_details": "bleu = 18.07, 43.7/21.4/15.3/13.0 (bp=0.871, ratio=0.879, hyp_len=251260, ref_len=285876)"}, {"model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_4_40392", "bleu": 17.47, "bleu_details": "bleu = 17.47, 43.0/20.7/14.6/12.4 (bp=0.872, ratio=0.880, hyp_len=251493, ref_len=285876)"}, {"model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_4_20196", "bleu": 16.46, "bleu_details": "bleu = 16.46, 41.7/19.1/13.2/11.1 (bp=0.891, ratio=0.897, hyp_len=256335, ref_len=285876)"}, {"model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu__3_0.287482", "bleu": 15.92, "bleu_details": "bleu = 15.92, 40.9/18.4/12.6/10.5 (bp=0.897, ratio=0.902, hyp_len=257759, ref_len=285876)"}, {"model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_3_60588", "bleu": 15.68, "bleu_details": "bleu = 15.68, 41.2/18.4/12.5/10.3 (bp=0.886, ratio=0.892, hyp_len=254956, ref_len=285876)"}, {"model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_3_40392", "bleu": 14.01, "bleu_details": "bleu = 14.01, 39.3/16.3/10.6/8.6 (bp=0.902, ratio=0.907, hyp_len=259263, ref_len=285876)"}, {"model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_3_20196", "bleu": 13.69, "bleu_details": "bleu = 13.69, 39.7/16.5/10.5/8.5 (bp=0.881, ratio=0.887, hyp_len=253648, ref_len=285876)"}, {"model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu__2_0.396229", "bleu": 13.46, "bleu_details": "bleu = 13.46, 38.1/15.2/9.5/7.6 (bp=0.942, ratio=0.943, hyp_len=269705, ref_len=285876)"}, {"model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_2_60588", "bleu": 12.68, "bleu_details": "bleu = 12.68, 37.8/14.8/9.0/7.1 (bp=0.923, ratio=0.926, hyp_len=264799, ref_len=285876)"}, {"model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_2_40392", "bleu": 12.26, "bleu_details": "bleu = 12.26, 36.9/13.8/8.1/6.3 (bp=0.963, ratio=0.964, hyp_len=275471, ref_len=285876)"}, {"model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_2_20196", "bleu": 11.52, "bleu_details": "bleu = 11.52, 37.0/13.6/7.7/5.9 (bp=0.936, ratio=0.938, hyp_len=268169, ref_len=285876)"}, {"model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu__1_0.711928", "bleu": 10.81, "bleu_details": "bleu = 10.81, 36.0/12.5/6.8/5.0 (bp=0.973, ratio=0.973, hyp_len=278181, ref_len=285876)"}, {"model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_1_60588", "bleu": 10.63, "bleu_details": "bleu = 10.63, 36.4/12.7/6.8/5.0 (bp=0.949, ratio=0.950, hyp_len=271712, ref_len=285876)"}, {"model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_1_40392", "bleu": 9.26, "bleu_details": "bleu = 9.26, 35.7/11.6/5.8/4.1 (bp=0.926, ratio=0.929, hyp_len=265537, ref_len=285876)"}, {"model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_1_20196", "bleu": 8.69, "bleu_details": "bleu = 8.69, 33.9/10.7/4.9/3.2 (bp=1.000, ratio=1.030, hyp_len=294515, ref_len=285876)"}, {"model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_0_60588", "bleu": 7.62, "bleu_details": "bleu = 7.62, 33.4/10.0/4.1/2.5 (bp=1.000, ratio=1.064, hyp_len=304043, ref_len=285876)"}, {"model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu__0_2.182614", "bleu": 7.56, "bleu_details": "bleu = 7.56, 33.8/9.9/4.0/2.4 (bp=1.000, ratio=1.010, hyp_len=288667, ref_len=285876)"}, {"model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_0_40392", "bleu": 6.55, "bleu_details": "bleu = 6.55, 32.3/9.2/3.4/1.8 (bp=1.000, ratio=1.061, hyp_len=303188, ref_len=285876)"}, {"model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_0_20196", "bleu": 3.65, "bleu_details": "bleu = 3.65, 24.1/6.0/1.7/0.7 (bp=1.000, ratio=1.339, hyp_len=382908, ref_len=285876)"}]
+[
+  {
+    "model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu__9_0.138838",
+    "bleu": 30.4,
+    "bleu_details": "bleu = 30.40, 55.5/35.8/29.1/25.9 (bp=0.870, ratio=0.877, hyp_len=250805, ref_len=285876)"
+  },
+  {
+    "model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_9_60588",
+    "bleu": 30.4,
+    "bleu_details": "bleu = 30.40, 55.0/35.3/28.7/25.5 (bp=0.881, ratio=0.888, hyp_len=253757, ref_len=285876)"
+  },
+  {
+    "model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_9_40392",
+    "bleu": 30.23,
+    "bleu_details": "bleu = 30.23, 55.6/35.8/29.2/26.0 (bp=0.862, ratio=0.871, hyp_len=249004, ref_len=285876)"
+  },
+  {
+    "model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_9_20196",
+    "bleu": 29.14,
+    "bleu_details": "bleu = 29.14, 54.3/34.3/27.8/24.7 (bp=0.866, ratio=0.875, hyp_len=250014, ref_len=285876)"
+  },
+  {
+    "model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_8_40392",
+    "bleu": 28.66,
+    "bleu_details": "bleu = 28.66, 54.2/34.2/27.7/24.6 (bp=0.855, ratio=0.865, hyp_len=247192, ref_len=285876)"
+  },
+  {
+    "model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_8_60588",
+    "bleu": 28.59,
+    "bleu_details": "bleu = 28.59, 53.6/33.6/27.1/24.0 (bp=0.869, ratio=0.877, hyp_len=250685, ref_len=285876)"
+  },
+  {
+    "model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu__8_0.148666",
+    "bleu": 28.43,
+    "bleu_details": "bleu = 28.43, 53.6/33.6/27.1/24.2 (bp=0.862, ratio=0.871, hyp_len=249010, ref_len=285876)"
+  },
+  {
+    "model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_8_20196",
+    "bleu": 28.11,
+    "bleu_details": "bleu = 28.11, 52.8/32.7/26.2/23.3 (bp=0.877, ratio=0.884, hyp_len=252781, ref_len=285876)"
+  },
+  {
+    "model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu__7_0.161065",
+    "bleu": 27.39,
+    "bleu_details": "bleu = 27.39, 53.3/33.0/26.5/23.5 (bp=0.846, ratio=0.857, hyp_len=245000, ref_len=285876)"
+  },
+  {
+    "model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_7_40392",
+    "bleu": 27.02,
+    "bleu_details": "bleu = 27.02, 51.9/31.6/25.2/22.3 (bp=0.872, ratio=0.879, hyp_len=251311, ref_len=285876)"
+  },
+  {
+    "model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_7_60588",
+    "bleu": 26.86,
+    "bleu_details": "bleu = 26.86, 52.0/31.6/25.2/22.2 (bp=0.868, ratio=0.876, hyp_len=250360, ref_len=285876)"
+  },
+  {
+    "model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_7_20196",
+    "bleu": 25.01,
+    "bleu_details": "bleu = 25.01, 50.9/30.0/23.5/20.6 (bp=0.854, ratio=0.863, hyp_len=246818, ref_len=285876)"
+  },
+  {
+    "model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu__6_0.177377",
+    "bleu": 24.61,
+    "bleu_details": "bleu = 24.61, 49.9/28.9/22.5/19.6 (bp=0.872, ratio=0.879, hyp_len=251415, ref_len=285876)"
+  },
+  {
+    "model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_6_60588",
+    "bleu": 24.1,
+    "bleu_details": "bleu = 24.10, 49.0/27.9/21.5/18.7 (bp=0.885, ratio=0.892, hyp_len=254872, ref_len=285876)"
+  },
+  {
+    "model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_6_40392",
+    "bleu": 23.82,
+    "bleu_details": "bleu = 23.82, 49.0/27.9/21.6/18.9 (bp=0.871, ratio=0.879, hyp_len=251183, ref_len=285876)"
+  },
+  {
+    "model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_6_20196",
+    "bleu": 23.21,
+    "bleu_details": "bleu = 23.21, 48.6/27.5/21.2/18.5 (bp=0.862, ratio=0.871, hyp_len=249012, ref_len=285876)"
+  },
+  {
+    "model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_5_60588",
+    "bleu": 21.81,
+    "bleu_details": "bleu = 21.81, 47.0/25.5/19.3/16.7 (bp=0.876, ratio=0.883, hyp_len=252451, ref_len=285876)"
+  },
+  {
+    "model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu__5_0.199755",
+    "bleu": 21.68,
+    "bleu_details": "bleu = 21.68, 47.2/25.6/19.2/16.6 (bp=0.870, ratio=0.878, hyp_len=251013, ref_len=285876)"
+  },
+  {
+    "model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_5_40392",
+    "bleu": 21.35,
+    "bleu_details": "bleu = 21.35, 46.2/24.7/18.5/16.0 (bp=0.887, ratio=0.893, hyp_len=255218, ref_len=285876)"
+  },
+  {
+    "model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_5_20196",
+    "bleu": 19.99,
+    "bleu_details": "bleu = 19.99, 45.1/23.1/17.0/14.5 (bp=0.888, ratio=0.894, hyp_len=255510, ref_len=285876)"
+  },
+  {
+    "model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_4_60588",
+    "bleu": 18.93,
+    "bleu_details": "bleu = 18.93, 44.6/22.4/16.2/13.8 (bp=0.870, ratio=0.878, hyp_len=251053, ref_len=285876)"
+  },
+  {
+    "model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu__4_0.232873",
+    "bleu": 18.07,
+    "bleu_details": "bleu = 18.07, 43.7/21.4/15.3/13.0 (bp=0.871, ratio=0.879, hyp_len=251260, ref_len=285876)"
+  },
+  {
+    "model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_4_40392",
+    "bleu": 17.47,
+    "bleu_details": "bleu = 17.47, 43.0/20.7/14.6/12.4 (bp=0.872, ratio=0.880, hyp_len=251493, ref_len=285876)"
+  },
+  {
+    "model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_4_20196",
+    "bleu": 16.46,
+    "bleu_details": "bleu = 16.46, 41.7/19.1/13.2/11.1 (bp=0.891, ratio=0.897, hyp_len=256335, ref_len=285876)"
+  },
+  {
+    "model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu__3_0.287482",
+    "bleu": 15.92,
+    "bleu_details": "bleu = 15.92, 40.9/18.4/12.6/10.5 (bp=0.897, ratio=0.902, hyp_len=257759, ref_len=285876)"
+  },
+  {
+    "model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_3_60588",
+    "bleu": 15.68,
+    "bleu_details": "bleu = 15.68, 41.2/18.4/12.5/10.3 (bp=0.886, ratio=0.892, hyp_len=254956, ref_len=285876)"
+  },
+  {
+    "model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_3_40392",
+    "bleu": 14.01,
+    "bleu_details": "bleu = 14.01, 39.3/16.3/10.6/8.6 (bp=0.902, ratio=0.907, hyp_len=259263, ref_len=285876)"
+  },
+  {
+    "model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_3_20196",
+    "bleu": 13.69,
+    "bleu_details": "bleu = 13.69, 39.7/16.5/10.5/8.5 (bp=0.881, ratio=0.887, hyp_len=253648, ref_len=285876)"
+  },
+  {
+    "model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu__2_0.396229",
+    "bleu": 13.46,
+    "bleu_details": "bleu = 13.46, 38.1/15.2/9.5/7.6 (bp=0.942, ratio=0.943, hyp_len=269705, ref_len=285876)"
+  },
+  {
+    "model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_2_60588",
+    "bleu": 12.68,
+    "bleu_details": "bleu = 12.68, 37.8/14.8/9.0/7.1 (bp=0.923, ratio=0.926, hyp_len=264799, ref_len=285876)"
+  },
+  {
+    "model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_2_40392",
+    "bleu": 12.26,
+    "bleu_details": "bleu = 12.26, 36.9/13.8/8.1/6.3 (bp=0.963, ratio=0.964, hyp_len=275471, ref_len=285876)"
+  },
+  {
+    "model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_2_20196",
+    "bleu": 11.52,
+    "bleu_details": "bleu = 11.52, 37.0/13.6/7.7/5.9 (bp=0.936, ratio=0.938, hyp_len=268169, ref_len=285876)"
+  },
+  {
+    "model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu__1_0.711928",
+    "bleu": 10.81,
+    "bleu_details": "bleu = 10.81, 36.0/12.5/6.8/5.0 (bp=0.973, ratio=0.973, hyp_len=278181, ref_len=285876)"
+  },
+  {
+    "model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_1_60588",
+    "bleu": 10.63,
+    "bleu_details": "bleu = 10.63, 36.4/12.7/6.8/5.0 (bp=0.949, ratio=0.950, hyp_len=271712, ref_len=285876)"
+  },
+  {
+    "model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_1_40392",
+    "bleu": 9.26,
+    "bleu_details": "bleu = 9.26, 35.7/11.6/5.8/4.1 (bp=0.926, ratio=0.929, hyp_len=265537, ref_len=285876)"
+  },
+  {
+    "model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_1_20196",
+    "bleu": 8.69,
+    "bleu_details": "bleu = 8.69, 33.9/10.7/4.9/3.2 (bp=1.000, ratio=1.030, hyp_len=294515, ref_len=285876)"
+  },
+  {
+    "model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_0_60588",
+    "bleu": 7.62,
+    "bleu_details": "bleu = 7.62, 33.4/10.0/4.1/2.5 (bp=1.000, ratio=1.064, hyp_len=304043, ref_len=285876)"
+  },
+  {
+    "model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu__0_2.182614",
+    "bleu": 7.56,
+    "bleu_details": "bleu = 7.56, 33.8/9.9/4.0/2.4 (bp=1.000, ratio=1.010, hyp_len=288667, ref_len=285876)"
+  },
+  {
+    "model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_0_40392",
+    "bleu": 6.55,
+    "bleu_details": "bleu = 6.55, 32.3/9.2/3.4/1.8 (bp=1.000, ratio=1.061, hyp_len=303188, ref_len=285876)"
+  },
+  {
+    "model_name": "/data/rrjin/nmt/data/bible_data/models/transformer/bible_transformer_single_gpu_0_20196",
+    "bleu": 3.65,
+    "bleu_details": "bleu = 3.65, 24.1/6.0/1.7/0.7 (bp=1.000, ratio=1.339, hyp_len=382908, ref_len=285876)"
+  }
+]

@@ -82,3 +82,14 @@ python -u -m evaluation.quick_eval \
     --src_vocab_path /data/rrjin/NMT/data/bible_data/vocab_data/attention_model/attention_src_combine_32000.vocab \
     --tgt_vocab_path /data/rrjin/NMT/data/bible_data/vocab_data/attention_model/attention_tgt_en_32000.vocab \
     --translation_output /data/rrjin/NMT/data/bible_data/translation/attention_model
+
+
+python -u -m evaluation.quick_eval \
+    --device cuda:2 \
+    --model_prefix /data/rrjin/NMT/data/bible_data/models/transformer/bible_transformer_single_gpu \
+    --test_src_path /data/rrjin/corpus_data/lang_vec_data/bible-corpus/train_data/dev_src_combine_bpe_32000_remove_at.txt \
+    --test_tgt_path /data/rrjin/corpus_data/lang_vec_data/bible-corpus/train_data/dev_tgt_en.txt \
+    --src_vocab_path /data/rrjin/NMT/data/bible_data/vocab_data/transformer/src_combine_32000_transformer.vocab \
+    --tgt_vocab_path /data/rrjin/NMT/data/bible_data/vocab_data/transformer/tgt_en_32000_transformer.vocab \
+    --translation_output /data/rrjin/NMT/data/bible_data/translation/transformer \
+    --transformer

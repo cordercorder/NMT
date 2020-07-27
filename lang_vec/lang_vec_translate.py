@@ -1,14 +1,16 @@
 import argparse
 import torch
 from utils.Vocab import Vocab
-from utils.tools import load_model, read_data, write_data
+from utils.tools import load_model, read_data, write_data, load_transformer
 from evaluation.S2S_translation import get_initial_decoder_hidden_state, decode_batch
 from lang_vec.lang_vec_tools import load_lang_vec
+from models import S2S_basic, S2S_attention, transformer
 from subprocess import call
 
 
 @torch.no_grad()
-def translate(line, s2s, src_vocab, tgt_vocab, lang_vec, device):
+def translate_rnn(line: str, s2s: S2S_basic.S2S or S2S_attention.S2S, src_vocab: Vocab, tgt_vocab: Vocab,
+                  lang_vec: dict, device: torch.device):
 
     line = " ".join([src_vocab.start_token, line, src_vocab.end_token])
 
@@ -61,6 +63,79 @@ def translate(line, s2s, src_vocab, tgt_vocab, lang_vec, device):
     return pred_line
 
 
+@torch.no_grad()
+def translate_transformer(line: str, s2s: transformer.S2S, src_vocab: Vocab, tgt_vocab: Vocab,
+                          lang_vec: dict, device: torch.device):
+
+    line = " ".join([src_vocab.start_token, line, src_vocab.end_token])
+
+    line = line.split()
+
+    max_length = (len(line) - 2) * 3
+
+    lang_token = line[1]
+
+    assert lang_token.startswith("<") and lang_token.endswith(">")
+
+    # lang_encoding: (d_model, )
+    lang_encoding = torch.tensor(lang_vec[lang_token], device=device)
+
+    # inputs: (input_length, )
+    src = torch.tensor([src_vocab.get_index(token) for token in line], device=device)
+    # inputs: (1, input_length)
+    src = src.view(1, -1)
+
+    src_mask = s2s.make_src_mask(src)
+
+    src = s2s.encoder.token_embedding(src) * s2s.encoder.scale
+
+    # src: (1, input_length, d_model)
+    src = s2s.encoder.pos_embedding(src)
+    src = src + lang_encoding
+
+    for layer in s2s.encoder.layers:
+        src, self_attention = layer(src, src_mask)
+
+    del self_attention
+
+    encoder_src = src
+
+    tgt = None
+
+    pred_line = [tgt_vocab.get_index(tgt_vocab.start_token)]
+
+    for i in range(max_length):
+
+        if tgt is None:
+            tgt = torch.tensor([pred_line], device=device)
+
+        tgt_mask = s2s.make_tgt_mask(tgt)
+
+        # output: (1, tgt_input_length, vocab_size)
+        output = s2s.decoder(tgt, encoder_src, tgt_mask, src_mask)
+
+        # (1, tgt_input_length)
+        pred = torch.argmax(output, dim=-1)[0, -1]
+
+        if tgt_vocab.get_token(pred.item()) == tgt_vocab.end_token:
+            break
+
+        tgt = torch.cat([tgt, pred.unsqueeze(0).unsqueeze(1)], dim=1)
+        pred_line.append(pred.item())
+
+    pred_line = [tgt_vocab.get_token(index) for index in pred_line[1:]]
+    return pred_line
+
+
+def translate(line: str, s2s: S2S_basic.S2S or S2S_attention.S2S or transformer.S2S, src_vocab: Vocab,
+              tgt_vocab: Vocab, lang_vec: dict, device: torch.device):
+
+    if isinstance(s2s, transformer.S2S):
+        return translate_transformer(line, s2s, src_vocab, tgt_vocab, lang_vec, device)
+    else:
+        return translate_rnn(line, s2s, src_vocab, tgt_vocab, lang_vec, device)
+
+
 def main():
     parser = argparse.ArgumentParser()
 
@@ -72,6 +147,7 @@ def main():
     parser.add_argument("--test_tgt_path", required=True)
     parser.add_argument("--lang_vec_path", required=True)
     parser.add_argument("--translation_output", required=True)
+    parser.add_argument("--transformer", action="store_true")
 
     args, unknown = parser.parse_known_args()
 
@@ -84,7 +160,20 @@ def main():
 
     device = args.device
 
-    s2s = load_model(args.load, device=device)
+    print("load from {}".format(args.load))
+
+    if args.transformer:
+
+        max_src_length = max(len(line) for line in src_data) + 2
+        max_tgt_length = max_src_length * 3
+        padding_value = src_vocab.get_index(src_vocab.mask_token)
+        assert padding_value == tgt_vocab.get_index(tgt_vocab.mask_token)
+
+        s2s = load_transformer(args.load, len(src_vocab), max_src_length, len(tgt_vocab), max_tgt_length,
+                               padding_value, device=device)
+
+    else:
+        s2s = load_model(args.load, device=device)
 
     s2s.eval()
 

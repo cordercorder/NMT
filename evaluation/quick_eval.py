@@ -15,7 +15,7 @@ parser.add_argument("--test_tgt_path", required=True)
 parser.add_argument("--src_vocab_path", required=True)
 parser.add_argument("--tgt_vocab_path", required=True)
 parser.add_argument("--translation_output_dir", required=True)
-parser.add_argument("--transformer", action="store_true", default=False)
+parser.add_argument("--transformer", action="store_true")
 
 args, unknown = parser.parse_known_args()
 
@@ -34,7 +34,7 @@ for model_path in glob.glob(args.model_prefix + "*"):
     if args.transformer:
 
         max_src_len = max(len(line.split()) for line in src_data) + 2
-        max_tgt_len = (max_src_len - 2) * 3
+        max_tgt_len = max_src_len * 3
 
         padding_value = src_vocab.get_index(src_vocab.mask_token)
 
