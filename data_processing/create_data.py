@@ -4,7 +4,7 @@ import random
 
 
 source_dir = "/data/rrjin/corpus_data/ted_data"
-output_dir = "/data/rrjin/corpus_data/ted_data"
+output_dir = "/data/rrjin/NMT/data/ted_data/corpus"
 
 src_data_prefix = "src_combine_"
 tgt_data_prefix = "tgt_en_"
@@ -21,10 +21,12 @@ def read_data(p, token=None):
         
         return data
 
+
 def save_data(p, data):
 
     with open(p, "w") as f:
         f.write("\n".join(data))
+
 
 def create(corpus_type):
 

@@ -9,7 +9,7 @@ from subprocess import call
 
 
 @torch.no_grad()
-def translate_rnn(line: str, s2s: S2S_basic.S2S or S2S_attention.S2S, src_vocab: Vocab, tgt_vocab: Vocab,
+def translate_rnn(line: str, line_number: int, s2s: S2S_basic.S2S or S2S_attention.S2S, src_vocab: Vocab, tgt_vocab: Vocab,
                   lang_vec: dict, device: torch.device):
 
     line = " ".join([src_vocab.start_token, line, src_vocab.end_token])
@@ -20,18 +20,21 @@ def translate_rnn(line: str, s2s: S2S_basic.S2S or S2S_attention.S2S, src_vocab:
 
     assert lang_token.startswith("<") and lang_token.endswith(">")
 
-    # lang_encoding: (embedding_size, )
-    lang_encoding = torch.tensor(lang_vec[lang_token], device=device)
-
     # inputs: (input_length,)
     inputs = torch.tensor([src_vocab.get_index(token) for token in line], device=device)
 
     # inputs: (input_length, 1)
     inputs = inputs.view(-1, 1)
 
-    # add language vector
-    # input_embedding: (input_length, 1, embedding_size)
-    input_embedding = s2s.encoder.embedding(inputs) + lang_encoding
+    if lang_token.startswith("<") and lang_token.endswith(">"):
+        # add language vector
+        # input_embedding: (input_length, 1, embedding_size)
+        # lang_encoding: (embedding_size, )
+        lang_encoding = torch.tensor(lang_vec[lang_token], device=device)
+        input_embedding = s2s.encoder.embedding(inputs) + lang_encoding
+    else:
+        input_embedding = s2s.encoder.embedding(inputs)
+        print("line {} does not add language embedding".format(line_number))
 
     encoder_output, encoder_hidden_state = s2s.encoder.rnn(input_embedding)
 
@@ -64,8 +67,8 @@ def translate_rnn(line: str, s2s: S2S_basic.S2S or S2S_attention.S2S, src_vocab:
 
 
 @torch.no_grad()
-def translate_transformer(line: str, s2s: transformer.S2S, src_vocab: Vocab, tgt_vocab: Vocab,
-                          lang_vec: dict, device: torch.device):
+def translate_transformer(line: str, line_number: int, s2s: transformer.S2S, src_vocab: Vocab,
+                          tgt_vocab: Vocab, lang_vec: dict, device: torch.device):
 
     line = " ".join([src_vocab.start_token, line, src_vocab.end_token])
 
@@ -74,11 +77,6 @@ def translate_transformer(line: str, s2s: transformer.S2S, src_vocab: Vocab, tgt
     max_length = (len(line) - 2) * 3
 
     lang_token = line[1]
-
-    assert lang_token.startswith("<") and lang_token.endswith(">")
-
-    # lang_encoding: (d_model, )
-    lang_encoding = torch.tensor(lang_vec[lang_token], device=device)
 
     # inputs: (input_length, )
     src = torch.tensor([src_vocab.get_index(token) for token in line], device=device)
@@ -91,7 +89,14 @@ def translate_transformer(line: str, s2s: transformer.S2S, src_vocab: Vocab, tgt
 
     # src: (1, input_length, d_model)
     src = s2s.encoder.pos_embedding(src)
-    src = src + lang_encoding
+
+    if lang_token.startswith("<") and lang_token.endswith(">"):
+        # lang_encoding: (d_model, )
+        lang_encoding = torch.tensor(lang_vec[lang_token], device=device)
+        src = src + lang_encoding
+
+    else:
+        print("line {} does not add language embedding".format(line_number))
 
     for layer in s2s.encoder.layers:
         src, self_attention = layer(src, src_mask)
@@ -127,13 +132,13 @@ def translate_transformer(line: str, s2s: transformer.S2S, src_vocab: Vocab, tgt
     return pred_line
 
 
-def translate(line: str, s2s: S2S_basic.S2S or S2S_attention.S2S or transformer.S2S, src_vocab: Vocab,
+def translate(line: str, line_number: int, s2s: S2S_basic.S2S or S2S_attention.S2S or transformer.S2S, src_vocab: Vocab,
               tgt_vocab: Vocab, lang_vec: dict, device: torch.device):
 
     if isinstance(s2s, transformer.S2S):
-        return translate_transformer(line, s2s, src_vocab, tgt_vocab, lang_vec, device)
+        return translate_transformer(line, line_number, s2s, src_vocab, tgt_vocab, lang_vec, device)
     else:
-        return translate_rnn(line, s2s, src_vocab, tgt_vocab, lang_vec, device)
+        return translate_rnn(line, line_number, s2s, src_vocab, tgt_vocab, lang_vec, device)
 
 
 def main():
@@ -178,8 +183,8 @@ def main():
     s2s.eval()
 
     pred_data = []
-    for line in src_data:
-        pred_data.append(translate(line, s2s, src_vocab, tgt_vocab, lang_vec, device))
+    for i, line in enumerate(src_data):
+        pred_data.append(translate(line, i, s2s, src_vocab, tgt_vocab, lang_vec, device))
 
     write_data(pred_data, args.translation_output)
 
