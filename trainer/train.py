@@ -23,7 +23,7 @@ parser.add_argument("--src_path", required=True)
 parser.add_argument("--tgt_path", required=True)
 parser.add_argument("--src_vocab_path", required=True)
 parser.add_argument("--tgt_vocab_path", required=True)
-parser.add_argument("--rnn_type", required=True)
+parser.add_argument("--rnn_type", required=True, choices=["rnn", "RNN", "lstm", "LSTM", "gru", "GRU"])
 parser.add_argument("--embedding_size", required=True, type=int)
 parser.add_argument("--hidden_size", required=True, type=int)
 parser.add_argument("--num_layers", required=True, type=int)
@@ -145,6 +145,8 @@ for i in range(args.start_epoch, args.end_epoch):
             torch.save(save_model(s2s, optimizer, args), args.checkpoint + "_" + str(i) + "_" + str(steps))
             ppl = math.exp(batch_loss)
             logging.info("Batch loss: {}, batch perplexity: {}".format(batch_loss, ppl))
+
+    epoch_loss /= steps
 
     torch.save(save_model(s2s, optimizer, args), args.checkpoint + "__{}_{:.6f}".format(i, epoch_loss))
     logging.info("Epoch: {}, time: {} seconds, loss: {}".format(i, time.time() - start_time, epoch_loss))
