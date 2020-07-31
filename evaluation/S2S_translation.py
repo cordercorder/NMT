@@ -64,7 +64,7 @@ def greedy_decoding_transformer(s2s, line, src_vocab, tgt_vocab, device):
     encoder_src = s2s.encoder(src, src_mask)
 
     tgt_list = [tgt_vocab.get_index(tgt_vocab.start_token)]
-    max_length = (src.size(1) - 2) * 3
+    max_length = src.size(1) * 3
 
     tgt = None
 
@@ -109,7 +109,7 @@ def greedy_decoding_rnn(s2s, line, src_vocab, tgt_vocab, device):
 
     decoder_input = torch.tensor([[tgt_vocab.get_index(tgt_vocab.start_token)]], device=device)
 
-    max_length = (inputs.size(0) - 2) * 3
+    max_length = inputs.size(0) * 3
 
     pred_line = []
 
@@ -142,7 +142,7 @@ def beam_search_decoding(s2s, line, src_vocab, tgt_vocab, beam_size, device):
     # inputs: (input_length,)
     inputs = torch.tensor([src_vocab.get_index(token) for token in line.split()], device=device)
 
-    max_length = (inputs.size(0) - 2) * 3
+    max_length = inputs.size(0) * 3
 
     # inputs: (input_length, 1)
     inputs = inputs.view(-1, 1)

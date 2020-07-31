@@ -115,7 +115,7 @@ class EncoderLayer(nn.Module):
 
         src = self.feed_forward_layer_norm(src + self.dropout(src_))
 
-        return src, self_attention
+        return src
 
 
 class PositionalEncoding:
@@ -170,7 +170,7 @@ class Encoder(nn.Module):
         src = self.dropout(self.pos_embedding(src))
 
         for layer in self.layers:
-            src, self_attention = layer(src, src_mask)
+            src = layer(src, src_mask)
 
         return src
 
@@ -205,7 +205,7 @@ class DecoderLayer(nn.Module):
         tgt_ = self.feed_forward_layer(tgt)
         tgt = self.feed_forward_layer_norm(tgt + self.dropout(tgt_))
 
-        return tgt, self_attention, encoder_attention
+        return tgt
 
 
 class Decoder(nn.Module):
@@ -238,7 +238,7 @@ class Decoder(nn.Module):
         tgt = self.dropout(self.pos_embedding(tgt))
 
         for layer in self.layers:
-            tgt, self_attention, encoder_attention = layer(tgt, encoder_src, tgt_mask, src_mask)
+            tgt = layer(tgt, encoder_src, tgt_mask, src_mask)
 
         # output: (batch_size, tgt_input_length, tgt_vocab_size)
         output = self.linear(tgt)

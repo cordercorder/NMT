@@ -5,3 +5,4 @@ trainer/multi_gpu_train_eval.sh
 trainer/test_dataloader.py
 data_processing/test.py
 lang_vec/test_lang_vec.py
+translation_memory/get_attention.py
