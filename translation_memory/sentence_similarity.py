@@ -25,5 +25,4 @@ def cosine_similarity(sentence_index: torch.LongTensor, memory: torch.FloatTenso
     # values: (1, )
     # index: (1, )
     values, index = similarity.topk(1)
-    return values, index
-
+    return values.item(), index.item()

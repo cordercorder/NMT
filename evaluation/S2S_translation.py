@@ -78,7 +78,7 @@ def greedy_decoding_transformer(s2s, line, src_vocab, tgt_vocab, device):
 
         output = s2s.decoder(tgt, encoder_src, tgt_mask, src_mask)
 
-        # (1, tgt_input_length)
+        # torch.argmax(output, dim=-1): (1, tgt_input_length)
         pred = torch.argmax(output, dim=-1)[0, -1]
 
         if tgt_vocab.get_token(pred.item()) == tgt_vocab.end_token:

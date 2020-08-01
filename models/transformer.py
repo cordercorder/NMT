@@ -101,7 +101,7 @@ class EncoderLayer(nn.Module):
 
         self.dropout = nn.Dropout(p=dropout)
 
-    def forward(self, src, src_mask):
+    def forward(self, src, src_mask, return_attention=False):
         # src: (batch_size, input_length, d_model)
         # src_mask: (batch_size, input_length)
 
@@ -114,6 +114,9 @@ class EncoderLayer(nn.Module):
         src_ = self.feed_forward_layer(src)
 
         src = self.feed_forward_layer_norm(src + self.dropout(src_))
+
+        if return_attention:
+            return src, self_attention
 
         return src
 
@@ -190,7 +193,7 @@ class DecoderLayer(nn.Module):
 
         self.dropout = nn.Dropout(p=dropout)
 
-    def forward(self, tgt, encoder_src, tgt_mask, src_mask):
+    def forward(self, tgt, encoder_src, tgt_mask, src_mask, return_attention=False):
         # tgt: (batch_size, tgt_input_length, d_model)
         # encoder_src: (batch_size, src_input_length, d_model)
         # tgt_mask: (batch_size, 1, tgt_input_length, tgt_input_length)
@@ -204,6 +207,9 @@ class DecoderLayer(nn.Module):
 
         tgt_ = self.feed_forward_layer(tgt)
         tgt = self.feed_forward_layer_norm(tgt + self.dropout(tgt_))
+
+        if return_attention:
+            return tgt, self_attention, encoder_attention
 
         return tgt
 

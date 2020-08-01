@@ -93,12 +93,9 @@ def train(args):
 
         steps = 0
 
-        use_teacher_forcing_list = [True if random.random() >= args.teacher_forcing_ratio else False for _ in range(STEPS)]
-
         for j, (input_batch, target_batch) in enumerate(train_loader):
 
-            batch_loss = s2s.train_batch(input_batch.to(device), target_batch.to(device), criterion, optimizer,
-                                         use_teacher_forcing_list[j])
+            batch_loss = s2s.train_batch(input_batch.to(device), target_batch.to(device), criterion, optimizer)
 
             epoch_loss += batch_loss
 
@@ -147,7 +144,6 @@ def main():
     parser.add_argument("--unk", default="UNK")
     parser.add_argument("--threshold", default=0, type=int)
     parser.add_argument("--save_model_steps", default=0.3, type=float)
-    parser.add_argument("--teacher_forcing_ratio", default=0.5, type=float)
     parser.add_argument("--mask_token", default="<mask>")
 
     parser.add_argument("--rebuild_vocab", action="store_true")

@@ -14,10 +14,10 @@ def plot_attention(attention, sentence, predicted_sentence, picture_path):
     ax = fig.add_subplot(1, 1, 1)
     ax.matshow(attention, cmap="viridis")
 
-    fontdict = {"fontsize": 14}
+    font_dict = {"fontsize": 14}
 
-    ax.set_xticklabels([""] + sentence, fontdict=fontdict, rotation=90)
-    ax.set_yticklabels([""] + predicted_sentence, fontdict=fontdict)
+    ax.set_xticklabels([""] + sentence, fontdict=font_dict, rotation=90)
+    ax.set_yticklabels([""] + predicted_sentence, fontdict=font_dict)
 
     ax.xaxis.set_major_locator(ticker.MultipleLocator(1))
     ax.yaxis.set_major_locator(ticker.MultipleLocator(1))

@@ -115,15 +115,12 @@ def train(local_rank, args):
 
         steps = 0
 
-        use_teacher_forcing_list = [True if random.random() >= args.teacher_forcing_ratio else False for _ in
-                                    range(STEPS)]
-
         for j, (input_batch, target_batch) in enumerate(train_loader):
 
             input_batch = input_batch.to(device, non_blocking=True)
             target_batch = target_batch.to(device, non_blocking=True)
 
-            output = s2s(input_batch, target_batch, use_teacher_forcing_list[j])
+            output = s2s(input_batch, target_batch)
 
             # output: (input_length - 1, batch_size, vocab_size)
             output = torch.stack(output, dim=0)
@@ -198,7 +195,6 @@ def main():
     parser.add_argument("--unk", default="UNK")
     parser.add_argument("--threshold", default=0, type=int)
     parser.add_argument("--save_model_steps", default=0.3, type=float)
-    parser.add_argument("--teacher_forcing_ratio", default=0.5, type=float)
     parser.add_argument("--mask_token", default="<mask>")
 
     parser.add_argument("--rebuild_vocab", action="store_true")

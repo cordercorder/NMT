@@ -122,13 +122,12 @@ class Decoder(nn.Module):
 
         return output, hidden_state
 
-    def forward(self, input_batch, target_batch, encoder_hidden_state, use_teacher_forcing):
+    def forward(self, input_batch, target_batch, encoder_hidden_state):
         """
         :param input_batch: the shape of input_batch is (input_length, batch_size). type: Tensor
         :param target_batch: the shape of target_batch is (input_length, batch_size). type: Tensor
         :param encoder_hidden_state: the shape of encoder_hidden_state is (num_layers, batch_size,hidden_size).
                                      type: Tensor
-        :param use_teacher_forcing: whether use teacher forcing or not. type: bool
         """
 
         decoder_hidden_state = encoder_hidden_state
@@ -144,16 +143,7 @@ class Decoder(nn.Module):
             # target_batch[i]: (batch_size, )
             decoder_output, decoder_hidden_state = self.decode_batch(decoder_input, decoder_hidden_state)
 
-            if use_teacher_forcing:
-                decoder_input = target_batch[i].view(1, -1)
-            else:
-                # pred_tensor: (1, batch_size, 1)
-                # pred_index: (1, batch_size, 1)
-                # pred_tensor, pred_index = decoder_output.topk(1, dim=2)
-                # decoder_input = torch.squeeze(pred_index, 2)
-
-                # pred_index: (1, batch_size)
-                decoder_input = torch.argmax(decoder_output, dim=2)
+            decoder_input = target_batch[i].view(1, -1)
 
             decoder_batch_output.append(decoder_output[0])
 
@@ -173,11 +163,10 @@ class S2S(nn.Module):
         self.encoder = encoder
         self.decoder = decoder
 
-    def forward(self, input_batch, target_batch, use_teacher_forcing):
+    def forward(self, input_batch, target_batch):
         """
         :param input_batch: the shape of input_batch is (input_length, batch_size). type: Tensor
         :param target_batch: the shape of target_batch is (input_length, batch_size). type: Tensor
-        :param use_teacher_forcing: whether use teacher forcing or not. type: bool
         :return: output of decoder, shape: (input_length, batch_size, vocab_size). type: Tensor
         """
 
@@ -218,11 +207,11 @@ class S2S(nn.Module):
                 # encoder_hidden_state: (num_layers, batch_size, 2 * hidden_size)
                 encoder_hidden_state = torch.cat([encoder_hidden_state[:, 0, :, :], encoder_hidden_state[:, 1, :, :]],
                                                  dim=2)
-        decoder_output = self.decoder(input_batch, target_batch, encoder_hidden_state, use_teacher_forcing)
+        decoder_output = self.decoder(input_batch, target_batch, encoder_hidden_state)
 
         return decoder_output
 
-    def train_batch(self, input_batch, target_batch, criterion, optimizer, use_teacher_forcing):
+    def train_batch(self, input_batch, target_batch, criterion, optimizer):
 
         """training api used only for single GPU"""
 
@@ -230,7 +219,7 @@ class S2S(nn.Module):
         # target_batch: (input_length, batch_size)
 
         # output: List
-        output = self(input_batch, target_batch, use_teacher_forcing)
+        output = self(input_batch, target_batch)
 
         # output: (input_length - 1, batch_size, vocab_size)
         output = torch.stack(output, dim=0)
