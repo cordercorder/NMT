@@ -29,14 +29,16 @@ def main():
         write_data(combined_data, args.combined_file_path)
     else:
         directory, src_file_name = os.path.split(args.src_file_path)
-        new_file_name = "combined_data.txt"
+        _, tgt_file_name = os.path.split(args.tgt_file_path)
+        new_file_name = "combined_" + src_file_name + "_" + tgt_file_name + ".txt"
         new_file_path = os.path.join(directory, new_file_name)
         write_data(combined_data, new_file_path)
         args.combined_file_path = new_file_path
 
     if not args.align_data_path:
         directory, src_file_name = os.path.split(args.src_file_path)
-        new_file_name = "align_data.txt"
+        _, tgt_file_name = os.path.split(args.tgt_file_path)
+        new_file_name = "align_" + src_file_name + "_" + tgt_file_name + ".txt"
         new_file_path = os.path.join(directory, new_file_name)
         args.align_data_path = new_file_path
 
