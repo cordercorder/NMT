@@ -1,6 +1,7 @@
 import torch
-from models import S2S_attention
+from models import S2S_attention, transformer
 from utils.Hypothesis import Hypothesis
+from typing import List
 import torch.nn.functional as F
 import copy
 
@@ -63,32 +64,32 @@ def greedy_decoding_transformer(s2s, line, src_vocab, tgt_vocab, device):
 
     encoder_src = s2s.encoder(src, src_mask)
 
-    tgt_list = [tgt_vocab.get_index(tgt_vocab.start_token)]
-    max_length = src.size(1) * 3
+    tgt = torch.tensor([[tgt_vocab.get_index(tgt_vocab.start_token)]], device=device)
 
-    tgt = None
+    pred_list = []
+    max_length = src.size(1) * 3
 
     for i in range(max_length):
 
         # tgt: (1, i + 1)
-        if tgt is None:
-            tgt = torch.tensor([tgt_list], device=device)
-
         tgt_mask = s2s.make_tgt_mask(tgt)
 
+        # output: (batch_size, input_length, vocab_size)
         output = s2s.decoder(tgt, encoder_src, tgt_mask, src_mask)
+        # output: (batch_size, vocab_size)
+        output = output[:, -1, :]
 
-        # torch.argmax(output, dim=-1): (1, tgt_input_length)
-        pred = torch.argmax(output, dim=-1)[0, -1]
+        # pred: (batch_size, )
+        pred = torch.argmax(output, dim=-1)
 
         if tgt_vocab.get_token(pred.item()) == tgt_vocab.end_token:
             break
 
-        tgt = torch.cat([tgt, pred.unsqueeze(0).unsqueeze(1)], dim=1)
+        tgt = torch.cat([tgt, pred.unsqueeze(1)], dim=1)
 
-        tgt_list.append(pred.item())
+        pred_list.append(pred.item())
 
-    pred_line = [tgt_vocab.get_token(index) for index in tgt_list[1:]]
+    pred_line = [tgt_vocab.get_token(index) for index in pred_list]
     return pred_line
 
 
@@ -251,3 +252,78 @@ def beam_search_decoding(s2s, line, src_vocab, tgt_vocab, beam_size, device):
     pred_line = [tgt_vocab.get_token(index) for index in pred_line_index]
 
     return pred_line
+
+
+# @torch.no_grad()
+# def beam_search_transformer(s2s: transformer.S2S, line: str, src_vocab, tgt_vocab, beam_size, device):
+#
+#     line = " ".join([src_vocab.start_token, line, src_vocab.end_token])
+#
+#     # src: (input_length,)
+#     src = torch.tensor([src_vocab.get_index(token) for token in line.split()], device=device)
+#
+#     # src: (1, input_length)
+#     src = src.unsqueeze(0)
+#     src_mask = s2s.make_src_mask(src)
+#
+#     encoder_src = s2s.encoder(src, src_mask)
+#
+#     tgt_list = [tgt_vocab.get_index(tgt_vocab.start_token)]
+#     max_length = src.size(1) * 3
+#
+#     # tgt: (1, 1)
+#     tgt = torch.tensor([[tgt_vocab.get_index(tgt_vocab.start_token)]], device=device)
+#
+#     # tgt: (beam_size, 1)
+#     tgt = tgt.expand(beam_size, -1)
+#     scores = torch.zeros(beam_size, 1)
+#
+#     complete_seqs = []
+#     complete_seqs_scores = []
+#
+#     step = 1
+#
+#     while True:
+#
+#         tgt_mask = s2s.make_tgt_mask(tgt)
+#
+#         # output: (1 * beam_size, input_length, vocab_size)
+#         output = s2s.decoder(tgt, encoder_src, tgt_mask, src_mask)
+#         # output: (1 * beam_size, vocab_size)
+#         output = output[:, -1, :]
+#
+#         # output: (1 * beam_size, vocab_size)
+#         output = F.softmax(output, dim=-1)
+#         output = output.log2()
+#
+#         if step == 1:
+#             pred_prob, pred_indices = output[0].topk(beam_size, dim=-1)
+#         else:
+#             # output: (beam_size * vocab_size)
+#             output = output.view(-1)
+#
+#             pred_prob, pred_indices = output.topk(beam_size, dim=-1)
+#         # beam_id: (beam_size, )
+#         beam_id = pred_indices / len(tgt_vocab)
+#         # token_id: (beam_size, )
+#         token_id = pred_indices % len(tgt_vocab)
+#
+#         tgt = torch.cat([tgt[beam_id], token_id.unsqueeze(1)], dim=1)
+#
+#         complete_indices = []
+#         in_complete_indices = []
+#
+#         for i, indices in enumerate(token_id):
+#
+#             if tgt_vocab.get_token(indices) == tgt_vocab.end_token:
+#                 complete_indices.append(i)
+#             else:
+#                 in_complete_indices.append(i)
+#
+#         if len(complete_indices) > 0:
+#             complete_seqs.extend(tgt[complete_indices].tolist())
+#             complete_seqs_scores.extend(scores[complete_indices])
+#
+#         tgt = tgt[in_complete_indices]
+#         scores = scores[in_complete_indices].unsqueeze(1)
+#

@@ -201,7 +201,7 @@ def read_data(data_path):
 
     with open(data_path) as f:
 
-        data = f.read().split("\n")
+        data = f.read().strip().split("\n")
         return data
 
 

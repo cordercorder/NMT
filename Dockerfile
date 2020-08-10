@@ -4,8 +4,7 @@ WORKDIR /nmt
 
 ENV PATH /opt/conda/bin:$PATH
 
-COPY conda_requirement.txt .
-COPY pip_requirement.txt .
+COPY *requirement.txt ./
 
 RUN apt-get update && apt-get -y install wget && \
     wget https://mirrors.tuna.tsinghua.edu.cn/anaconda/miniconda/Miniconda3-py37_4.8.2-Linux-x86_64.sh && \
