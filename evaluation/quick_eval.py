@@ -2,20 +2,25 @@ import glob
 import argparse
 from utils.tools import read_data, load_model, load_transformer, write_data
 from utils.Vocab import Vocab
-from evaluation.S2S_translation import greedy_decoding
+from evaluation.S2S_translation import greedy_decoding, beam_search_transformer
 import os
 from subprocess import call
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--device", required=True)
-parser.add_argument("--model_prefix", required=True)
+parser.add_argument("--model_load", required=True)
+parser.add_argument("--is_prefix", action="store_true")
+
 parser.add_argument("--test_src_path", required=True)
 parser.add_argument("--test_tgt_path", required=True)
 parser.add_argument("--src_vocab_path", required=True)
 parser.add_argument("--tgt_vocab_path", required=True)
 parser.add_argument("--translation_output_dir", required=True)
 parser.add_argument("--transformer", action="store_true")
+parser.add_argument("--beam_size", type=int)
+
+parser.add_argument("--record_time", action="store_true")
 
 args, unknown = parser.parse_known_args()
 
@@ -26,8 +31,13 @@ src_data = read_data(args.test_src_path)
 
 device = args.device
 
+if args.beam_size:
+    print("Beam size: {}".format(args.beam_size))
 
-for model_path in glob.glob(args.model_prefix + "*"):
+if args.is_prefix:
+    args.model_load = args.model_load + "*"
+
+for model_path in glob.glob(args.model_load):
 
     print("Load model from {}".format(model_path))
 
@@ -50,19 +60,34 @@ for model_path in glob.glob(args.model_prefix + "*"):
 
     pred_data = []
 
+    if args.record_time:
+        import time
+        start_time = time.time()
+
     for line in src_data:
-        pred_data.append(greedy_decoding(s2s, line, src_vocab, tgt_vocab, device, args.transformer))
+        if args.beam_size:
+            pred_data.append(beam_search_transformer(s2s, line, src_vocab, tgt_vocab, args.beam_size, device))
+        else:
+            pred_data.append(greedy_decoding(s2s, line, src_vocab, tgt_vocab, device, args.transformer))
+
+    if args.record_time:
+        end_time = time.time()
+        print("Time spend: {} seconds".format(end_time - start_time))
 
     if not os.path.exists(args.translation_output_dir):
         os.makedirs(args.translation_output_dir)
 
     _, model_name = os.path.split(model_path)
 
-    p = os.path.join(args.translation_output_dir, model_name + "_translations.txt")
+    if args.beam_size:
+        translation_file_name_prefix = "{}_beam_size{}".format(model_name, args.beam_size)
+    else:
+        translation_file_name_prefix = model_name
+    p = os.path.join(args.translation_output_dir, translation_file_name_prefix + "_translations.txt")
 
     write_data(pred_data, p)
 
-    p_tok = os.path.join(args.translation_output_dir, model_name + "_translations_tok.txt")
+    p_tok = os.path.join(args.translation_output_dir, translation_file_name_prefix + "_translations_tok.txt")
 
     tok_command = "sed -r 's/(@@ )|(@@ ?$)//g' {} > {}".format(p, p_tok)
 

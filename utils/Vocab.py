@@ -41,6 +41,7 @@ class Vocab:
         if token not in self.__token2index:
 
             if self.unk_token_index is None:
+                print("Token: {}".format(token))
                 raise Exception("Token not found")
             else:
                 return self.unk_token_index
@@ -53,6 +54,7 @@ class Vocab:
         :return: the token which id is equal to index. type: str
         """
         if index not in self.__index2token:
+            print("Index: {}".format(index))
             raise Exception("Index not found")
 
         return self.__index2token.get(index)
