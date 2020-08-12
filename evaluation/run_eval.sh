@@ -1,1 +1,1 @@
-nohup bash quick_eval.sh > ../logs/attention_model/attention_eval_test_data_bible_logs.txt 2>&1 &
+nohup bash quick_eval.sh > ../tmpdata/eval_beam_translation_model_attention_lstm_logs_beam_size3.txt 2>&1 &

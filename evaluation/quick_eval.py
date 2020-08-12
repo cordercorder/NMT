@@ -2,7 +2,7 @@ import glob
 import argparse
 from utils.tools import read_data, load_model, load_transformer, write_data
 from utils.Vocab import Vocab
-from evaluation.S2S_translation import greedy_decoding, beam_search_transformer
+from evaluation.S2S_translation import greedy_decoding, beam_search_transformer, beam_search_rnn
 import os
 from subprocess import call
 
@@ -66,7 +66,10 @@ for model_path in glob.glob(args.model_load):
 
     for line in src_data:
         if args.beam_size:
-            pred_data.append(beam_search_transformer(s2s, line, src_vocab, tgt_vocab, args.beam_size, device))
+            if args.transformer:
+                pred_data.append(beam_search_transformer(s2s, line, src_vocab, tgt_vocab, args.beam_size, device))
+            else:
+                pred_data.append(beam_search_rnn(s2s, line, src_vocab, tgt_vocab, args.beam_size, device))
         else:
             pred_data.append(greedy_decoding(s2s, line, src_vocab, tgt_vocab, device, args.transformer))
 
