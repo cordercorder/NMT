@@ -78,7 +78,7 @@ def save_model(s2s_model, optimizer, args):
                 "dropout_": s2s_model.encoder.dropout_,
                 "bidirectional_": s2s_model.encoder.bidirectional_
             },
-            "attention":{
+            "attention": {
                 "hidden_size1": s2s_model.decoder.attention.hidden_size1,
                 "hidden_size2": s2s_model.decoder.attention.hidden_size2,
                 "attention_size": s2s_model.decoder.attention.attention_size

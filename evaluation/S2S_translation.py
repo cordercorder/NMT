@@ -262,7 +262,7 @@ def beam_search_rnn(s2s: S2S_attention.S2S or S2S_basic.S2S, line: str, src_voca
     complete_seqs_scores = []
     step = 1
 
-    while step <= max_length:
+    while True:
 
         # output: (1, beam_size, vocab_size)
         # decoder_hidden_state: (num_layers, beam_size, hidden_size)
@@ -292,6 +292,11 @@ def beam_search_rnn(s2s: S2S_attention.S2S or S2S_basic.S2S, line: str, src_voca
         # decoder_input: (step, beam_size)
         next_decoder_input = torch.cat([decoder_input[:, beam_id], token_id.unsqueeze(0)], dim=0)
 
+        if step == max_length:
+            complete_seqs.extend(next_decoder_input.t().tolist())
+            complete_seqs_scores.extend(pred_prob.tolist())
+            break
+
         complete_indices = []
 
         for i, indices in enumerate(token_id):
@@ -300,7 +305,7 @@ def beam_search_rnn(s2s: S2S_attention.S2S or S2S_basic.S2S, line: str, src_voca
                 complete_indices.append(i)
 
         if len(complete_indices) > 0:
-            complete_seqs.extend(next_decoder_input[:, complete_indices].tolist())
+            complete_seqs.extend(next_decoder_input[:, complete_indices].t().tolist())
 
             complete_pred_indices = beam_id[complete_indices] * len(tgt_vocab) + token_id[complete_indices]
 
@@ -381,7 +386,7 @@ def beam_search_transformer(s2s: transformer.S2S, line: str, src_vocab: Vocab, t
 
     step = 1
 
-    while step <= max_length:
+    while True:
 
         tgt_mask = s2s.make_tgt_mask(tgt)
 
@@ -411,6 +416,11 @@ def beam_search_transformer(s2s: transformer.S2S, line: str, src_vocab: Vocab, t
 
         # next_tgt: (beam_size, input_length + 1)
         next_tgt = torch.cat([tgt[beam_id], token_id.unsqueeze(1)], dim=1)
+
+        if step == max_length:
+            complete_seqs.extend(next_tgt.tolist())
+            complete_seqs_scores.extend(pred_prob.tolist())
+            break
 
         complete_indices = []
 
