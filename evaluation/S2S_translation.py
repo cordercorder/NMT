@@ -3,7 +3,6 @@ from utils.combine_bidir_state import combine_bidir_hidden_state
 from models import S2S_attention, S2S_basic, transformer
 from utils.Hypothesis import Hypothesis
 from utils.Vocab import Vocab
-from typing import List
 import torch.nn.functional as F
 import copy
 
@@ -17,7 +16,7 @@ def decode_batch(s2s: S2S_attention.S2S or S2S_basic.S2S, decoder_input: torch.t
 
 
 def greedy_decoding(s2s: S2S_basic.S2S or S2S_attention.S2S or transformer.S2S, line: str,
-                    src_vocab: Vocab, tgt_vocab:Vocab, device: torch.device, is_transformer: bool=False):
+                    src_vocab: Vocab, tgt_vocab:Vocab, device: torch.device, is_transformer: bool = False):
 
     if is_transformer:
         return greedy_decoding_transformer(s2s, line, src_vocab, tgt_vocab, device)
@@ -112,8 +111,19 @@ def greedy_decoding_rnn(s2s: S2S_basic.S2S or S2S_attention.S2S, line: str, src_
 
 
 @torch.no_grad()
-def beam_search_decoding(s2s: S2S_basic.S2S or S2S_attention.S2S, line: str, src_vocab: Vocab,
+def beam_search_decoding(s2s: S2S_basic.S2S or S2S_attention.S2S or transformer.S2S, line: str, src_vocab: Vocab,
                          tgt_vocab: Vocab, beam_size: int, device: torch.device):
+    if isinstance(s2s, transformer.S2S):
+        return beam_search_transformer(s2s, line, src_vocab, tgt_vocab, beam_size, device)
+
+    else:
+        return beam_search_rnn(s2s, line, src_vocab, tgt_vocab, beam_size, device)
+
+
+# ------ deprecated ------ #
+@torch.no_grad()
+def beam_search_decoding_old(s2s: S2S_basic.S2S or S2S_attention.S2S, line: str, src_vocab: Vocab,
+                             tgt_vocab: Vocab, beam_size: int, device: torch.device):
 
     line = " ".join([src_vocab.start_token, line, src_vocab.end_token])
 
@@ -131,7 +141,7 @@ def beam_search_decoding(s2s: S2S_basic.S2S or S2S_attention.S2S, line: str, src
     encoder_output, encoder_hidden_state = s2s.encoder(inputs)
 
     # decoder_input: (1, 1)
-    decoder_input = torch.tensor([[tgt_vocab.get_index(tgt_vocab.start_token)]], device=device)
+    decoder_input = tgt_vocab.get_index(tgt_vocab.start_token)
 
     decoder_hidden_state = combine_bidir_hidden_state(s2s, encoder_hidden_state)
 
@@ -230,6 +240,7 @@ def beam_search_decoding(s2s: S2S_basic.S2S or S2S_attention.S2S, line: str, src
     pred_line = [tgt_vocab.get_token(index) for index in pred_line_index]
 
     return pred_line
+# ------ deprecated ------ #
 
 
 @torch.no_grad()
