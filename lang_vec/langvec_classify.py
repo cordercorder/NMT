@@ -2,7 +2,7 @@ import numpy as np
 import argparse
 import pycountry
 import lang2vec.lang2vec as l2v
-from sklearn import preprocessing, linear_model
+from sklearn import preprocessing, linear_model, svm
 from lang_vec.lang_vec_tools import load_lang_vec
 from utils.tools import read_data
 from typing import Dict
@@ -29,6 +29,8 @@ def check_alpha3(alpha3: str):
 
 def train(args: argparse.Namespace, lang_vec: Dict, lang_alpha3: Dict, features: Dict):
 
+    print("Classify method: {}".format(args.classify_method))
+
     # fix order
     lang_alpha3 = {k: lang_alpha3[k] for k in sorted(lang_alpha3.keys())}
 
@@ -45,7 +47,7 @@ def train(args: argparse.Namespace, lang_vec: Dict, lang_alpha3: Dict, features:
 
         idx = [i for i in range(len(Y)) if Y[i] != -1]
 
-        train_set = np.array([(X[i], Y[i]) for i in idx])
+        train_set = np.array([[X[i], Y[i]] for i in idx])
 
         if len(train_set) == 0:
             print("Feature {} is not available in all 101 languages!".format(features["CODE"][feat]))
@@ -76,8 +78,13 @@ def train(args: argparse.Namespace, lang_vec: Dict, lang_alpha3: Dict, features:
             f.write("Feature {} has only one class!\n".format(features["CODE"][feat]))
             continue
 
-        logistic_model = linear_model.LogisticRegression(max_iter=3000)
-        clf = logistic_model.fit(x_train.tolist(), y_train.tolist())
+        if args.classify_method == "logistic":
+            logistic_model = linear_model.LogisticRegression(max_iter=3000)
+            clf = logistic_model.fit(x_train.tolist(), y_train.tolist())
+        else:
+            svm_model = svm.SVC()
+            clf = svm_model.fit(x_train.tolist(), y_train.tolist())
+
         score = clf.score(x_test.tolist(), y_test.tolist())
         score_dict[features["CODE"][feat]] = score
         print("Feature {} accuracy is {}, train dataset has {} element, test dataset has {} element".format(
@@ -92,6 +99,7 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--feature_name", required=True)
+    parser.add_argument("--classify_method", required=True, choices=["svm", "logistic"])
     parser.add_argument("--lang_vec_path", required=True)
     parser.add_argument("--lang_name_path", required=True)
     parser.add_argument("--output_file_path", required=True)

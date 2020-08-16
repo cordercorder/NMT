@@ -80,7 +80,7 @@ def train(args):
 
     train_data = NMTDataset(src_data, tgt_data)
     train_loader = DataLoader(train_data, args.batch_size, shuffle=True,
-                              collate_fn=lambda batch: collate(batch, padding_value, device))
+                              collate_fn=lambda batch: collate(batch, padding_value))
 
     STEPS = len(range(0, len(src_data), args.batch_size))
     save_model_steps = max(int(STEPS * args.save_model_steps), 1)

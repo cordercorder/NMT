@@ -2,7 +2,7 @@ import glob
 import argparse
 from utils.tools import read_data, load_model, load_transformer, write_data
 from utils.Vocab import Vocab
-from evaluation.S2S_translation import greedy_decoding, beam_search_transformer, beam_search_rnn, beam_search_decoding
+from evaluation.S2S_translation import greedy_decoding, beam_search_decoding
 import os
 from subprocess import call
 
