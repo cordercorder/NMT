@@ -9,18 +9,21 @@ from subprocess import call
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--device", required=True)
+
 parser.add_argument("--model_load", required=True)
+parser.add_argument("--transformer", action="store_true")
 parser.add_argument("--is_prefix", action="store_true")
 
 parser.add_argument("--test_src_path", required=True)
 parser.add_argument("--test_tgt_path", required=True)
 parser.add_argument("--src_vocab_path", required=True)
 parser.add_argument("--tgt_vocab_path", required=True)
+
 parser.add_argument("--translation_output_dir", required=True)
-parser.add_argument("--transformer", action="store_true")
 parser.add_argument("--beam_size", type=int)
 
 parser.add_argument("--record_time", action="store_true")
+parser.add_argument("--need_tok", action="store_true")
 
 args, unknown = parser.parse_known_args()
 
@@ -87,13 +90,21 @@ for model_path in glob.glob(args.model_load):
 
     write_data(pred_data, p)
 
-    p_tok = os.path.join(args.translation_output_dir, translation_file_name_prefix + "_translations_tok.txt")
+    if args.need_tok:
 
-    tok_command = "sed -r 's/(@@ )|(@@ ?$)//g' {} > {}".format(p, p_tok)
+        # replace '@@ ' with ''
 
-    call(tok_command, shell=True)
+        p_tok = os.path.join(args.translation_output_dir, translation_file_name_prefix + "_translations_tok.txt")
 
-    bleu_calculation_command = "perl /data/rrjin/NMT/scripts/multi-bleu.perl {} < {}".format(args.test_tgt_path, p_tok)
+        tok_command = "sed -r 's/(@@ )|(@@ ?$)//g' {} > {}".format(p, p_tok)
+
+        call(tok_command, shell=True)
+
+        bleu_calculation_command = "perl /data/rrjin/NMT/scripts/multi-bleu.perl {} < {}".format(args.test_tgt_path,
+                                                                                                 p_tok)
+
+    else:
+        bleu_calculation_command = "perl /data/rrjin/NMT/scripts/multi-bleu.perl {} < {}".format(args.test_tgt_path, p)
 
     call(bleu_calculation_command, shell=True)
 

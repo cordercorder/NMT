@@ -1,1 +1,1 @@
-nohup bash quick_eval.sh > ../tmpdata/eval_beam_translation_model_basic_lstm_logs_beam_size3_old.txt 2>&1 &
+nohup bash quick_eval.sh > ../logs/basic_model/basic_model_eval_test_data_bible_logs.txt 2>&1 &
