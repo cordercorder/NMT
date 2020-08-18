@@ -1,11 +1,12 @@
 import os
+import argparse
 from subprocess import call
 
 
 class JointBPE:
 
     def __init__(self, num_operations: int, train_file_src_path: str, train_file_tgt_path: str,
-                 vocabulary_threshold: int, directory_path: str = None):
+                 vocabulary_threshold: int, directory_path: str):
 
         self.num_operations = num_operations
         self.train_file_src_path = train_file_src_path
@@ -21,9 +22,6 @@ class JointBPE:
 
         print("Learn Joint BPE")
 
-        if self.directory_path is None:
-            self.directory_path, _ = os.path.split(self.train_file_src_path)
-
         self.codes_file_path = os.path.join(self.directory_path, "codes_file_joint_bpe_" + str(self.num_operations))
         self.src_vocab_path = os.path.join(self.directory_path, "src_vocab_joint_bpe_" + str(self.num_operations))
         self.tgt_vocab_path = os.path.join(self.directory_path, "tgt_vocab_joint_bpe_" + str(self.num_operations))
@@ -38,8 +36,6 @@ class JointBPE:
     def apply_joint_bpe(self, file_src_path_list: list, file_tgt_path_list: list):
 
         print("Apply Joint BPE")
-
-        assert self.directory_path is not None
 
         assert len(file_src_path_list) == len(file_tgt_path_list)
 
@@ -71,7 +67,7 @@ class JointBPE:
 class IndividualBPE:
 
     def __init__(self, num_operations: int, train_file_src_path: str, train_file_tgt_path: str,
-                 directory_path: str = None):
+                 directory_path: str):
 
         self.num_operations = num_operations
         self.train_file_src_path = train_file_src_path
@@ -84,9 +80,6 @@ class IndividualBPE:
     def learn_bpe(self):
 
         print("Learn BPE")
-
-        if self.directory_path is None:
-            self.directory_path, _ = os.path.split(self.train_file_src_path)
 
         self.codes_file_src_path = os.path.join(self.directory_path, "codes_file_src_bpe_" + str(self.num_operations))
         self.codes_file_tgt_path = os.path.join(self.directory_path, "codes_file_tgt_bpe_" + str(self.num_operations))
@@ -137,22 +130,24 @@ class IndividualBPE:
 
 def main():
 
-    prefix = "/data/rrjin/corpus_data/lang_vec_data/bible-corpus/train_data"
-    num_operations = 22000
-    train_file_src_path = os.path.join(prefix, "train_src_combine.txt")
-    train_file_tgt_path = os.path.join(prefix, "train_tgt_en.txt")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--train_file_src_path", required=True)
+    parser.add_argument("--train_file_tgt_path", required=True)
+    parser.add_argument("--num_operations", required=True, type=int)
+    parser.add_argument("--vocabulary_threshold", required=True, type=int)
 
-    file_src_list = ["train_src_combine.txt", "dev_src_combine.txt", "test_src_combine.txt"]
-    file_tgt_list = ["train_tgt_en.txt", "dev_tgt_en.txt", "test_tgt_en.txt"]
+    parser.add_argument("--file_src_path_list", nargs="+")
+    parser.add_argument("--file_tgt_path_list", nargs="+")
 
-    file_src_path_list = [os.path.join(prefix, file) for file in file_src_list]
-    file_tgt_path_list = [os.path.join(prefix, file) for file in file_tgt_list]
+    parser.add_argument("--output_directory")
 
-    directory_path = "/data/rrjin/NMT/data/bible_data"
+    args, unknown = parser.parse_known_args()
 
-    bpe = JointBPE(num_operations, train_file_src_path, train_file_tgt_path, 0, directory_path)
+    bpe = JointBPE(args.num_operations, args.train_file_src_path, args.train_file_tgt_path,
+                   args.vocabulary_threshold, args.output_directory)
+
     bpe.learn_joint_bpe()
-    bpe.apply_joint_bpe(file_src_path_list, file_tgt_path_list)
+    bpe.apply_joint_bpe(args.file_src_path_list, args.file_tgt_path_list)
 
 
 if __name__ == '__main__':
