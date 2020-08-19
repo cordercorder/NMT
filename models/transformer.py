@@ -38,6 +38,10 @@ class MultiHeadAttentionLayer(nn.Module):
         K = self.WK(key)
         V = self.WV(value)
 
+        del query
+        del key
+        del value
+
         # Q: (batch_size, num_heads, input_length1, d_k)
         # K: (batch_size, num_heads, input_length2, d_k)
         # V: (batch_size, num_heads, input_length2, d_v)
@@ -51,8 +55,12 @@ class MultiHeadAttentionLayer(nn.Module):
         if mask is not None:
             energy = energy.masked_fill(mask == False, -1e12)
 
+        del mask
+
         # attention: (batch_size, num_heads, input_length1, input_length2)
         attention = torch.softmax(energy, dim=-1)
+
+        del energy
 
         # x: (batch_size, num_heads, input_length1, d_k)
         x = torch.matmul(self.dropout(attention), V)

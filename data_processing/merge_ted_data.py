@@ -62,7 +62,7 @@ def merge(corpus_path: str):
                 else:
                     test_data_src.extend(data)
 
-    output_dir = "/data/rrjin/NMT/data/ted_data"
+    output_dir = "/data/rrjin/NMT/data/ted_data/corpus"
 
     write_data(train_data_src, os.path.join(output_dir, "raw_train_data_src.combine"))
     write_data(train_data_tgt, os.path.join(output_dir, "raw_train_data_tgt.en"))

@@ -6,14 +6,15 @@ python -m trainer.multi_gpu_train_transformer \
     --d_model 512 \
     --num_heads 8 \
     --d_ff 2048 \
-    --src_language spa \
+    --src_language combine \
     --tgt_language en \
-    --src_path /data/rrjin/NMT/tmpdata/train_src_tok.spa \
-    --tgt_path /data/rrjin/NMT/tmpdata/train_tgt_tok.en \
-    --src_vocab_path /data/rrjin/NMT/tmpdata/src2.spa.vocab \
-    --tgt_vocab_path /data/rrjin/NMT/tmpdata/tgt2.en.vocab \
-    --checkpoint /data/rrjin/NMT/tmpdata/test_transformer_multi_gpu3 \
+    --src_path /data/rrjin/NMT/data/ted_data/corpus/shuffled_train_data_src_tok_joint_bpe_32000_filtered.combine \
+    --tgt_path /data/rrjin/NMT/data/ted_data/corpus/shuffled_train_data_tgt_tok_joint_bpe_32000_filtered.en \
+    --src_vocab_path /data/rrjin/NMT/data/ted_data/vocab_data/transformer/src_32000_transformer.combine.vocab \
+    --tgt_vocab_path /data/rrjin/NMT/data/ted_data/vocab_data/transformer/tgt_32000_transformer.en.vocab \
+    --checkpoint /data/rrjin/NMT/data/ted_data/models/transformer \
     --dropout 0.1 \
     --rebuild_vocab \
     --learning_rate 0.00005 \
-    --end_epoch 15
+    --end_epoch 20 \
+    --batch_size 64

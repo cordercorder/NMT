@@ -107,8 +107,8 @@ def train(local_rank, args):
 
         for j, (input_batch, target_batch) in enumerate(train_loader):
 
-            input_batch = input_batch.to(device, no_blocking=True)
-            target_batch = target_batch.to(device, no_blocking=True)
+            input_batch = input_batch.to(device, non_blocking=True)
+            target_batch = target_batch.to(device, non_blocking=True)
 
             output = s2s(input_batch, target_batch[:, :-1])
 
