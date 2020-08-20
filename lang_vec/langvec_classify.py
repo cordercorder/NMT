@@ -14,7 +14,7 @@ def get_language_alpha3(language_code: str):
     elif len(language_code) == 3:
         ans = pycountry.languages.get(alpha_3 = language_code)
     else:
-        return "-1"
+        raise Exception("language code is not valid")
     if ans is not None:
         return ans.alpha_3
     else:

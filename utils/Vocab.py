@@ -85,7 +85,6 @@ class Vocab:
 
         """
         :param corpus_path: location of corpus. type: str
-        :param normalize: whether normalize sentence in the corpus or not, default True. type: bool
         :return: None
         """
 
