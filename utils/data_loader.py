@@ -26,14 +26,14 @@ def load_corpus_data(data_path, language_name, start_token, end_token, mask_toke
 
     with open(data_path) as f:
 
-        data = f.read().split("\n")
+        data = f.read().strip().split("\n")
 
         for line in data:
 
             line = " ".join([start_token, line, end_token])
 
             if rebuild_vocab:
-                v.add_sentence(line, normalize=False)
+                v.add_sentence(line)
 
             corpus.append(line)
 
@@ -87,10 +87,9 @@ if __name__ == "__main__":
     y = [[10, 11, 12], [13, 14, 15], [16, 17, 18]]
 
     train_data = NMTDataset(x, y)
-    train_loader = DataLoader(train_data, 2, shuffle=True, collate_fn=lambda batch: collate(batch, 0, device))
+    train_loader = DataLoader(train_data, 2, shuffle=True, collate_fn=lambda batch: collate(batch, 0))
 
     for s, t in train_loader:
         print(s)
         print(t)
         print("------")
-
