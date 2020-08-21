@@ -16,6 +16,8 @@ def train(args):
 
     device = args.device
 
+    torch.cuda.set_device(device)
+
     src_data, src_vocab = load_corpus_data(args.src_path, args.src_language, args.start_token, args.end_token,
                                            args.mask_token, args.src_vocab_path, args.rebuild_vocab, args.unk,
                                            args.threshold)
@@ -26,7 +28,6 @@ def train(args):
 
     logging.info("Source language vocab size: {}".format(len(src_vocab)))
     logging.info("Target language vocab size: {}".format(len(tgt_vocab)))
-
 
     assert len(src_data) == len(tgt_data)
 
@@ -85,8 +86,8 @@ def train(args):
 
         for j, (input_batch, target_batch) in enumerate(train_loader):
 
-            input_batch = input_batch.to(device, no_blocking=True)
-            target_batch = target_batch.to(device, no_blocking=True)
+            input_batch = input_batch.to(device, non_blocking=True)
+            target_batch = target_batch.to(device, non_blocking=True)
 
             batch_loss = s2s.train_batch(input_batch, target_batch, criterion, optimizer)
 

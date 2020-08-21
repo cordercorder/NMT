@@ -25,7 +25,6 @@ class BahdanauAttention(nn.Module):
 
         self.V = nn.Linear(attention_size, 1)
 
-
     def forward(self, hs, ht):
 
         """
@@ -50,15 +49,24 @@ class BahdanauAttention(nn.Module):
 
         # score: (batch_size, input_length, 1)
         score = self.V(torch.tanh(self.W1(ht) + self.W2(hs)))
+        del hs
 
         # attention_weight: (batch_size, input_length, 1)
         attention_weights = F.softmax(score, dim=1)
+        del score
 
         # context_vector: (batch_size, input_length, num_directions * hidden_size)
         context_vector = attention_weights * ht
+        del ht
+        if self.training:
+            del attention_weights
 
         # context_vector: (batch_size, num_directions * hidden_size)
         context_vector = torch.sum(context_vector, dim=1)
+
+        # for memory reduction, do not return attention weight during training
+        if self.training:
+            return context_vector,
 
         return context_vector, attention_weights
 
@@ -186,25 +194,37 @@ class AttentionDecoder(nn.Module):
             # atten_decoder_hidden_state: (num_layers, batch_size, hidden_size)
             atten_decoder_hidden_state = decoder_hidden_state
 
+        attention_result = self.attention(atten_decoder_hidden_state, encoder_output)
+        del encoder_output
+
         # context_vector: (batch_size, num_directions * hidden_size)
         # attention_weight: (batch_size, input_length, 1)
-        context_vector, attention_weights = self.attention(atten_decoder_hidden_state, encoder_output)
+        if self.training:
+            context_vector = attention_result[0]
+        else:
+            context_vector, attention_weights = attention_result
+
+        del attention_result
 
         # context_vector: (1, batch_size, num_directions * hidden_size)
         context_vector = context_vector.view(1, context_vector.size(0), context_vector.size(1))
 
         # decoder_input: (1, batch_size, embedding_size + num_directions * hidden_size)
         decoder_input = torch.cat([decoder_input, context_vector], dim=2)
+        del context_vector
 
         # output: (1, batch_size, hidden_size)
         # hidden_state is hn or (hn, cn)
         # hn: (num_layers, batch_size, hidden_size)
         # cn: (num_layers, batch_size, hidden_size)
         output, hidden_state = self.rnn(decoder_input, decoder_hidden_state)
+        del decoder_input
+        del decoder_hidden_state
 
         # output: (1, batch_size, vocab_size)
         output = self.fc(output)
 
+        # parameter return_attention_weight can only be used during evaluation
         if return_attention_weight:
             return output, hidden_state, attention_weights
 

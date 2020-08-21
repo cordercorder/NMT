@@ -17,7 +17,6 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 def train(local_rank, args):
-
     rank = args.nr * args.gpus + local_rank
 
     src_data, src_vocab = load_corpus_data(args.src_path, args.src_language, args.start_token, args.end_token,
@@ -57,8 +56,8 @@ def train(local_rank, args):
     if args.load:
 
         logging.info("Load existing model from {}".format(args.load))
-        s2s, optimizer_state_dict = load_transformer(args.load, len(src_vocab), max_src_len, len(tgt_vocab), max_tgt_len,
-                                                     padding_value, training=True, device=device)
+        s2s, optimizer_state_dict = load_transformer(args.load, len(src_vocab), max_src_len, len(tgt_vocab),
+                                                     max_tgt_len, padding_value, training=True, device=device)
 
         s2s = nn.parallel.DistributedDataParallel(s2s, device_ids=[local_rank])
 
@@ -67,11 +66,11 @@ def train(local_rank, args):
 
     else:
         logging.info("New model")
-        encoder = transformer.Encoder(len(src_vocab), max_src_len, args.d_model, args.num_layers, args.num_heads, args.d_ff,
-                                      args.dropout, device)
+        encoder = transformer.Encoder(len(src_vocab), max_src_len, args.d_model, args.num_layers, args.num_heads,
+                                      args.d_ff, args.dropout, device)
 
-        decoder = transformer.Decoder(len(tgt_vocab), max_tgt_len, args.d_model, args.num_layers, args.num_heads, args.d_ff,
-                                      args.dropout, device)
+        decoder = transformer.Decoder(len(tgt_vocab), max_tgt_len, args.d_model, args.num_layers, args.num_heads,
+                                      args.d_ff, args.dropout, device)
 
         s2s = transformer.S2S(encoder, decoder, padding_value, device).to(device)
 
@@ -133,7 +132,8 @@ def train(local_rank, args):
 
             if steps % save_model_steps == 0:
                 if local_rank == 0:
-                    torch.save(save_transformer(s2s, optimizer, args), args.checkpoint + "_" + str(i) + "_" + str(steps))
+                    torch.save(save_transformer(s2s, optimizer, args), args.checkpoint + "_" + str(i) +
+                               "_" + str(steps))
                 ppl = math.exp(batch_loss)
                 logging.info("Batch loss: {}, batch perplexity: {}, local rank: {}".format(batch_loss, ppl, local_rank))
 
@@ -141,8 +141,10 @@ def train(local_rank, args):
 
         epoch_ppl = math.exp(epoch_loss)
 
-        logging.info("Epoch: {}, time: {} seconds, loss: {}, perplexity: {}, local rank: {}".format(i, time.time() - start_time,
-                                                                                                    epoch_loss, epoch_ppl,
+        logging.info("Epoch: {}, time: {} seconds, loss: {}, perplexity: {}, local rank: {}".format(i, time.time() -
+                                                                                                    start_time,
+                                                                                                    epoch_loss,
+                                                                                                    epoch_ppl,
                                                                                                     local_rank))
         if local_rank == 0:
             torch.save(save_transformer(s2s, optimizer, args), args.checkpoint + "__{}_{:.6f}".format(i, epoch_loss))

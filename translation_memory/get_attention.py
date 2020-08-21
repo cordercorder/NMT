@@ -5,7 +5,7 @@ import torch
 import os
 from utils.tools import load_transformer, read_data
 from utils.Vocab import Vocab
-from models import transformer
+from models import transformer_old
 
 
 def plot_attention(attention, sentence, predicted_sentence, num_heads, num_rows, num_cols, picture_path):
@@ -33,7 +33,7 @@ def plot_attention(attention, sentence, predicted_sentence, num_heads, num_rows,
 
 
 @torch.no_grad()
-def translate(s2s: transformer.S2S, line: str, src_vocab: Vocab, tgt_vocab: Vocab, device: torch.device):
+def translate(s2s: transformer_old.S2S, line: str, src_vocab: Vocab, tgt_vocab: Vocab, device: torch.device):
 
     line = " ".join([src_vocab.start_token, line, src_vocab.end_token])
 

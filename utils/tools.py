@@ -215,5 +215,6 @@ def test_tools():
     s = "tom prefers his dirty and and a \" . . . . . . . . . . . . \" . . \" \""
     print(normalizeString((s)))
 
+
 if __name__ == "__main__":
     test_tools()

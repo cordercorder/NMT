@@ -65,13 +65,20 @@ class MultiHeadAttentionLayer(nn.Module):
         # x: (batch_size, num_heads, input_length1, d_k)
         x = torch.matmul(self.dropout(attention), V)
 
+        # for memory reduction, do not return attention weight during training
+        if self.training:
+            del attention
+
         # x: (batch_size, input_length1, d_model)
         x = x.transpose(1, 2).contiguous().view(batch_size, -1, self.d_model)
 
         # x: (batch_size, input_length1, d_model)
         x = self.WO(x)
 
-        return x, attention
+        if self.training:
+            return x,
+        else:
+            return x, attention
 
 
 class PositionwiseFeedforwardLayer(nn.Module):
@@ -110,21 +117,25 @@ class EncoderLayer(nn.Module):
         self.dropout = nn.Dropout(p=dropout)
 
     def forward(self, src, src_mask, return_attention=False):
+
+        # parameter return_attention can only be used during evaluation
+
         # src: (batch_size, input_length, d_model)
         # src_mask: (batch_size, input_length)
 
-        src_, self_attention = self.self_attention_layer(src, src, src, src_mask)
+        src_ = self.self_attention_layer(src, src, src, src_mask)
 
         # dropout, residual connection, layer normalization
         # src: (batch_size, input_length, d_model)
-        src = self.self_attention_layer_norm(src + self.dropout(src_))
+        src = self.self_attention_layer_norm(src + self.dropout(src_[0]))
 
-        src_ = self.feed_forward_layer(src)
+        if self.training:
+            del src_
 
-        src = self.feed_forward_layer_norm(src + self.dropout(src_))
+        src = self.feed_forward_layer_norm(src + self.dropout(self.feed_forward_layer(src)))
 
         if return_attention:
-            return src, self_attention
+            return src, src_[1]
 
         return src
 
@@ -202,19 +213,31 @@ class DecoderLayer(nn.Module):
         self.dropout = nn.Dropout(p=dropout)
 
     def forward(self, tgt, encoder_src, tgt_mask, src_mask, return_attention=False):
+
+        # parameter return_attention can only be used during evaluation
+
         # tgt: (batch_size, tgt_input_length, d_model)
         # encoder_src: (batch_size, src_input_length, d_model)
         # tgt_mask: (batch_size, 1, tgt_input_length, tgt_input_length)
         # src_mask: (batch_size, 1, 1, src_input_length)
 
-        tgt_, self_attention = self.self_attention_layer(tgt, tgt, tgt, tgt_mask)
-        tgt = self.self_attention_layer_norm(tgt + self.dropout(tgt_))
+        tgt_ = self.self_attention_layer(tgt, tgt, tgt, tgt_mask)
 
-        tgt_, encoder_attention = self.encoder_attention_layer(tgt, encoder_src, encoder_src, src_mask)
-        tgt = self.encoder_attention_layer_norm(tgt + self.dropout(tgt_))
+        if not self.training:
+            self_attention = tgt_[1]
 
-        tgt_ = self.feed_forward_layer(tgt)
-        tgt = self.feed_forward_layer_norm(tgt + self.dropout(tgt_))
+        tgt = self.self_attention_layer_norm(tgt + self.dropout(tgt_[0]))
+        del tgt_
+
+        tgt_ = self.encoder_attention_layer(tgt, encoder_src, encoder_src, src_mask)
+
+        if not self.training:
+            encoder_attention = tgt_[1]
+
+        tgt = self.encoder_attention_layer_norm(tgt + self.dropout(tgt_[0]))
+        del tgt_
+
+        tgt = self.feed_forward_layer_norm(tgt + self.dropout(self.feed_forward_layer(tgt)))
 
         if return_attention:
             return tgt, self_attention, encoder_attention
@@ -254,10 +277,10 @@ class Decoder(nn.Module):
         for layer in self.layers:
             tgt = layer(tgt, encoder_src, tgt_mask, src_mask)
 
-        # output: (batch_size, tgt_input_length, tgt_vocab_size)
-        output = self.linear(tgt)
+        # tgt: (batch_size, tgt_input_length, tgt_vocab_size)
+        tgt = self.linear(tgt)
 
-        return output
+        return tgt
 
 
 class S2S(nn.Module):

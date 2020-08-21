@@ -7,7 +7,6 @@ from models import S2S_attention
 from utils.data_loader import load_corpus_data, NMTDataset, collate
 from torch.utils.data import DataLoader
 from utils.tools import sort_src_sentence_by_length, save_model, load_model
-import random
 import time
 import math
 
@@ -17,6 +16,8 @@ logging.basicConfig(level=logging.DEBUG)
 def train(args):
 
     device = torch.device(args.device)
+
+    torch.cuda.set_device(device)
 
     src_data, src_vocab = load_corpus_data(args.src_path, args.src_language, args.start_token, args.end_token,
                                            args.mask_token, args.src_vocab_path, args.rebuild_vocab, args.unk,
