@@ -198,6 +198,7 @@ class S2S(nn.Module):
 
         # output: List
         output = self(input_batch, target_batch)
+        del input_batch
 
         # output: (input_length - 1, batch_size, vocab_size)
         output = torch.stack(output, dim=0)
@@ -205,6 +206,8 @@ class S2S(nn.Module):
         # output: (batch_size, vocab_size, input_length - 1)
         # target: (batch_size, input_length - 1)
         batch_loss = criterion(output.permute(1, 2, 0), target_batch[1:].transpose(0, 1))
+        del output
+        del target_batch
 
         optimizer.zero_grad()
         batch_loss.backward()

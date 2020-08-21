@@ -80,7 +80,7 @@ def train(args):
     criterion = nn.CrossEntropyLoss(ignore_index=padding_value)
 
     train_data = NMTDataset(src_data, tgt_data)
-    train_loader = DataLoader(train_data, args.batch_size, shuffle=True,
+    train_loader = DataLoader(train_data, args.batch_size, shuffle=True, pin_memory=True,
                               collate_fn=lambda batch: collate(batch, padding_value))
 
     STEPS = len(range(0, len(src_data), args.batch_size))
@@ -96,7 +96,8 @@ def train(args):
 
         for j, (input_batch, target_batch) in enumerate(train_loader):
 
-            batch_loss = s2s.train_batch(input_batch.to(device), target_batch.to(device), criterion, optimizer)
+            batch_loss = s2s.train_batch(input_batch.to(device, non_blocking=True),
+                                         target_batch.to(device, non_blocking=True), criterion, optimizer)
 
             epoch_loss += batch_loss
 

@@ -110,10 +110,13 @@ def train(local_rank, args):
             target_batch = target_batch.to(device, non_blocking=True)
 
             output = s2s(input_batch, target_batch[:, :-1])
+            del input_batch
 
             target_batch = target_batch[:, 1:]
 
             batch_loss = criterion(output.transpose(1, 2), target_batch)
+            del target_batch
+            del output
 
             optimizer.zero_grad()
 

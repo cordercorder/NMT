@@ -86,10 +86,9 @@ def train(args):
 
         for j, (input_batch, target_batch) in enumerate(train_loader):
 
-            input_batch = input_batch.to(device, non_blocking=True)
-            target_batch = target_batch.to(device, non_blocking=True)
-
-            batch_loss = s2s.train_batch(input_batch, target_batch, criterion, optimizer)
+            batch_loss = s2s.train_batch(input_batch.to(device, non_blocking=True),
+                                         target_batch.to(device, non_blocking=True),
+                                         criterion, optimizer)
 
             epoch_loss += batch_loss
 

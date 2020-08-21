@@ -49,18 +49,16 @@ class MultiHeadAttentionLayer(nn.Module):
         K = K.view(batch_size, -1, self.num_heads, self.d_k).transpose(1, 2)
         V = V.view(batch_size, -1, self.num_heads, self.d_v).transpose(1, 2)
 
-        # energy: (batch_size, num_heads, input_length1, input_length2)
-        energy = torch.matmul(Q, K.transpose(2, 3)) / self.scale
+        # attention: (batch_size, num_heads, input_length1, input_length2)
+        attention = torch.matmul(Q, K.transpose(2, 3)) / self.scale
 
         if mask is not None:
-            energy = energy.masked_fill(mask == False, -1e12)
+            attention = attention.masked_fill(mask == False, -1e12)
 
         del mask
 
         # attention: (batch_size, num_heads, input_length1, input_length2)
-        attention = torch.softmax(energy, dim=-1)
-
-        del energy
+        attention = torch.softmax(attention, dim=-1)
 
         # x: (batch_size, num_heads, input_length1, d_k)
         x = torch.matmul(self.dropout(attention), V)
@@ -124,6 +122,7 @@ class EncoderLayer(nn.Module):
         # src_mask: (batch_size, input_length)
 
         src_ = self.self_attention_layer(src, src, src, src_mask)
+        del src_mask
 
         # dropout, residual connection, layer normalization
         # src: (batch_size, input_length, d_model)
@@ -222,6 +221,7 @@ class DecoderLayer(nn.Module):
         # src_mask: (batch_size, 1, 1, src_input_length)
 
         tgt_ = self.self_attention_layer(tgt, tgt, tgt, tgt_mask)
+        del tgt_mask
 
         if not self.training:
             self_attention = tgt_[1]
@@ -230,6 +230,8 @@ class DecoderLayer(nn.Module):
         del tgt_
 
         tgt_ = self.encoder_attention_layer(tgt, encoder_src, encoder_src, src_mask)
+        del encoder_src
+        del src_mask
 
         if not self.training:
             encoder_attention = tgt_[1]
@@ -309,6 +311,7 @@ class S2S(nn.Module):
         tgt_pad_mask = torch.ne(tgt, self.padding_value).unsqueeze(1).unsqueeze(2)
 
         tgt_length = tgt.size(1)
+        del tgt
 
         # tgt_sub_mask: (tgt_length, tgt_length)
         tgt_sub_mask = torch.tril(torch.ones(tgt_length, tgt_length, device=self.device)).bool()
@@ -327,9 +330,7 @@ class S2S(nn.Module):
         src_mask = self.make_src_mask(src)
         tgt_mask = self.make_tgt_mask(tgt)
 
-        encoder_src = self.encoder(src, src_mask)
-
-        output = self.decoder(tgt, encoder_src, tgt_mask, src_mask)
+        output = self.decoder(tgt, self.encoder(src, src_mask), tgt_mask, src_mask)
 
         return output
 
@@ -352,10 +353,13 @@ class S2S(nn.Module):
 
         # output: (batch_size, tgt_input_length - 1, tgt_vocab_size)
         output = self(input_batch, target_batch[:, :-1])
+        del input_batch
 
         target_batch = target_batch[:, 1:]
 
         batch_loss = criterion(output.transpose(1, 2), target_batch)
+        del output
+        del target_batch
 
         optimizer.zero_grad()
 
