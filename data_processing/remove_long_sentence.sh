@@ -1,3 +1,5 @@
+# deprecated
+
 cd ..
 
 python -m data_processing.remove_long_sentence \

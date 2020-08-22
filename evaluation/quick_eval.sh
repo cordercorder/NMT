@@ -1,11 +1,15 @@
 cd ..
 
 python -u -m evaluation.quick_eval \
-    --device cuda:1 \
-    --model_load /data/rrjin/NMT/data/bible_data/models/basic_model/basic_multi_gpu_lstm_9_41036_old \
-    --test_src_path /data/rrjin/corpus_data/lang_vec_data/bible-corpus/train_data/test_src_combine_bpe_32000_remove_at.txt \
-    --test_tgt_path /data/rrjin/corpus_data/lang_vec_data/bible-corpus/train_data/test_tgt_en_bpe_32000_remove_at.txt \
-    --src_vocab_path /data/rrjin/NMT/data/bible_data/vocab_data/basic_model/basic_src_combine_32000_old.vocab \
-    --tgt_vocab_path /data/rrjin/NMT/data/bible_data/vocab_data/basic_model/basic_tgt_en_32000_old.vocab \
-    --translation_output_dir /data/rrjin/NMT/data/bible_data/translation/basic_model_test \
-    --record_time
+    --device cuda:3 \
+    --model_load /data/rrjin/NMT/data/ted_data/models/transformer/transformer \
+    --transformer \
+    --is_prefix \
+    --test_src_path /data/rrjin/NMT/data/ted_data/corpus/raw_dev_data_src_tok_joint_bpe_32000_sorted_filter2.combine \
+    --test_tgt_path /data/rrjin/NMT/data/ted_data/corpus/raw_dev_data_tgt_tok_sorted_filter2.en \
+    --src_vocab_path /data/rrjin/NMT/data/ted_data/vocab_data/transformer/src_32000_transformer.combine.vocab \
+    --tgt_vocab_path /data/rrjin/NMT/data/ted_data/vocab_data/transformer/tgt_32000_transformer.en.vocab \
+    --translation_output_dir /data/rrjin/NMT/data/ted_data/translation/transformer_dev_batch_translation_sorted \
+    --record_time \
+    --need_tok \
+    --batch_size 64

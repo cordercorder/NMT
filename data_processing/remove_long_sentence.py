@@ -1,3 +1,5 @@
+# deprecated
+
 import argparse
 import os
 from utils.tools import read_data, write_data

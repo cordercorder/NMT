@@ -1,6 +1,9 @@
-from utils.Vocab import Vocab
 import torch
+
+from typing import List
+
 from torch.utils.data import Dataset, DataLoader
+from utils.Vocab import Vocab
 
 
 class NMTDataset(Dataset):
@@ -50,6 +53,17 @@ def load_corpus_data(data_path, language_name, start_token, end_token, mask_toke
         data2index.append([v.get_index(token) for token in line.split()])
 
     return data2index, v
+
+
+def convert_data_to_index(data: List[str], vocab: Vocab):
+
+    data2index = []
+
+    for sentence in data:
+        sentence = " ".join([vocab.start_token, sentence, vocab.end_token])
+        data2index.append([vocab.get_index(token) for token in sentence.split()])
+
+    return data2index
 
 
 def pad_data(data, padding_value, batch_first):
