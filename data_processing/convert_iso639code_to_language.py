@@ -33,15 +33,15 @@ def convert(language_code_path: str, output_file_path: str):
         elif len(code) == 3:
             alpha["alpha_3"] = code
         else:
-            language_dict[code] = "unknown"
+            language_dict[code] = {"ISO639-3": "unknown", "language name": "unknown"}
             continue
 
         language_data = pycountry.languages.get(**alpha)
 
         if language_data is None:
-            language_dict[code] = "unknown"
+            language_dict[code] = {"ISO639-3": "unknown", "language name": "unknown"}
         else:
-            language_dict[code] = language_data.name
+            language_dict[code] = {"ISO639-3": language_data.alpha_3, "language name": language_data.name}
 
     with open(output_file_path, "w") as f:
         json.dump(language_dict, f)
