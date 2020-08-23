@@ -27,6 +27,7 @@ def greedy_decoding(s2s: S2S_basic.S2S or S2S_attention.S2S or transformer.S2S, 
 
 def convert_index_to_token(pred_list: List[List], tgt_vocab: Vocab, batch_size: int, end_token_index: int):
 
+    # pred_line: List[List] (batch_size, tgt_length)
     pred_line = []
 
     for j in range(batch_size):

@@ -112,7 +112,7 @@ for model_path in glob.glob(args.model_load):
         if args.beam_size:
             pred_data.append(beam_search_decoding(s2s, data.to(device), tgt_vocab, args.beam_size, device))
         else:
-            pred_data.append(greedy_decoding(s2s, data.to(device), tgt_vocab, device))
+            pred_data.extend(greedy_decoding(s2s, data.to(device), tgt_vocab, device))
 
     if args.record_time:
         end_time = time.time()
