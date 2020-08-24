@@ -91,9 +91,6 @@ def train(local_rank, args):
     train_loader = DataLoader(train_data, args.batch_size, shuffle=False, sampler=train_sampler, drop_last=True,
                               pin_memory=True, collate_fn=lambda batch: collate(batch, padding_value, batch_first=True))
 
-    STEPS = len(range(0, len(src_data), args.batch_size))
-    save_model_steps = max(int(STEPS * args.save_model_steps), 1)
-
     for i in range(args.start_epoch, args.end_epoch):
 
         train_sampler.set_epoch(i)
@@ -133,13 +130,6 @@ def train(local_rank, args):
 
             steps += 1
 
-            if steps % save_model_steps == 0:
-                if local_rank == 0:
-                    torch.save(save_transformer(s2s, optimizer, args), args.checkpoint + "_" + str(i) +
-                               "_" + str(steps))
-                ppl = math.exp(batch_loss)
-                logging.info("Batch loss: {}, batch perplexity: {}, local rank: {}".format(batch_loss, ppl, local_rank))
-
         epoch_loss /= steps
 
         epoch_ppl = math.exp(epoch_loss)
@@ -150,7 +140,7 @@ def train(local_rank, args):
                                                                                                     epoch_ppl,
                                                                                                     local_rank))
         if local_rank == 0:
-            torch.save(save_transformer(s2s, optimizer, args), args.checkpoint + "__{}_{:.6f}".format(i, epoch_loss))
+            torch.save(save_transformer(s2s, optimizer, args), "{}_{}_{}".format(args.checkpoint, i, steps))
 
     torch.save(save_transformer(s2s, optimizer, args), args.checkpoint + "_rank{}".format(local_rank))
 
@@ -187,7 +177,6 @@ def main():
     parser.add_argument("--end_token", default="<e>")
     parser.add_argument("--unk", default="UNK")
     parser.add_argument("--threshold", default=0, type=int)
-    parser.add_argument("--save_model_steps", default=0.3, type=float)
     parser.add_argument("--mask_token", default="<mask>")
 
     parser.add_argument("--rebuild_vocab", action="store_true")

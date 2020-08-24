@@ -4,6 +4,10 @@ sys.path.append("../")
 from utils.tools import read_data, write_data
 
 
+def check(src_data: list, tgt_data: list):
+    return len(src_data) == len(tgt_data)
+
+
 def merge(corpus_path: str):
 
     train_data_src = []
@@ -15,15 +19,16 @@ def merge(corpus_path: str):
     test_data_src = []
     test_data_tgt = []
 
+    un_uesd_corpus = {"pt-br_en", "fr-ca_en", "eo_en", "calv_en"}
+
     for corpus_dir in os.listdir(corpus_path):
+
+        if corpus_dir in un_uesd_corpus:
+            continue
+
         corpus_dir = os.path.join(corpus_path, corpus_dir)
 
         for corpus_file_name in os.listdir(corpus_dir):
-
-            if (corpus_file_name.find("zh") != -1) \
-                    and (not corpus_file_name.endswith(".en")) \
-                    and (corpus_file_name.find("seg") == -1):
-                continue
 
             corpus_file_path = os.path.join(corpus_dir, corpus_file_name)
 
@@ -62,7 +67,10 @@ def merge(corpus_path: str):
                 else:
                     test_data_src.extend(data)
 
-    output_dir = "/data/rrjin/NMT/data/ted_data/corpus"
+    assert check(train_data_src, train_data_tgt) and check(dev_data_src, dev_data_tgt) and \
+           check(test_data_src, test_data_tgt)
+
+    output_dir = "/data/rrjin/NMT/data/ted_data_new/corpus"
 
     write_data(train_data_src, os.path.join(output_dir, "raw_train_data_src.combine"))
     write_data(train_data_tgt, os.path.join(output_dir, "raw_train_data_tgt.en"))

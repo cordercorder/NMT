@@ -36,19 +36,12 @@ def load(src_lang, trg_lang):
                   split_type='dev', data_type='target')
 
 
-# src_lang_name = ["es", "pt-br", "fr", "ru", "he", "ar", "ko", "zh-cn", "it", "ja", "zh-tw", "nl", "ro", "tr", "devi", "pl", "pt", "bg", "el", "fa", "sr", "hu", "hr", "uk", "cs", "id", "th",
-#                  "sv", "sk", "sq", "lt", "dacalv", "my", "sl", "mk", "fr-ca", "fi", "hy", "hi", "nb", "ka", "mn", "et", "ku", "gl", "mr", "zh", "ur", "eoms", "az", "ta", "bn", "kk", "be", "eu", "bs"]
+src_lang_name = ['es', 'pt-br', 'fr', 'ru', 'he', 'ar', 'ko', 'zh-cn', 'it', 'ja', 'zh-tw', 'nl', 'ro', 'tr', 'de',
+                 'vi', 'pl', 'pt', 'bg', 'el', 'fa', 'sr', 'hu', 'hr', 'uk', 'cs', 'id', 'th', 'sv', 'sk', 'sq', 'lt',
+                 'da', 'calv', 'my', 'sl', 'mk', 'fr-ca', 'fi', 'hy', 'hi', 'nb', 'ka', 'mn', 'et', 'ku', 'gl', 'mr',
+                 'zh', 'ur', 'eo', 'ms', 'az', 'ta', 'bn', 'kk', 'be', 'eu', 'bs']
 
-
-# src_lang_name = ["pl", "pt", "bg", "el", "fa", "sr", "hu", "hr", "uk", "cs", "id", "th", "sv", "sk", "sq", "lt", "dacalv", "my", "sl",
-#                  "mk", "fr-ca", "fi", "hy", "hi", "nb", "ka", "mn", "et", "ku", "gl", "mr", "zh", "ur", "eoms", "az", "ta", "bn", "kk", "be", "eu", "bs"]
-
-# src_lang_name = ["my", "sl", "mk", "fr-ca", "fi", "hy", "hi", "nb", "ka", "mn", "et",
-#                  "ku", "gl", "mr", "zh", "ur", "eoms", "az", "ta", "bn", "kk", "be", "eu", "bs"]
-
-
-src_lang_name = ["az", "ta", "bn", "kk", "be", "eu", "bs"]
-
+print(len(src_lang_name))
 
 for lang in src_lang_name:
     load(lang, "en")

@@ -1,6 +1,8 @@
 import pickle
 import os
 
+from collections import OrderedDict
+
 
 class Vocab:
 
@@ -23,7 +25,7 @@ class Vocab:
 
         self.__token2index = {}
         self.__index2token = {}
-        self.__token_count = {}
+        self.__token_count = OrderedDict()
 
         self.unk_token = None
         self.unk_token_index = None

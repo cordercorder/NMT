@@ -1,21 +1,14 @@
 import argparse
 from subprocess import call
-import os
 
 
 def segmentation(args):
 
-    for file in args.zh_corpus_list:
+    assert len(args.zh_corpus_list) == len(args.segmented_zh_corpus_list)
 
-        directory, file_name = os.path.split(file)
-        idx = file_name.rfind(".")
+    for file_path, new_file_path in zip(args.zh_corpus_list, args.segmented_zh_corpus_list):
 
-        assert idx != -1
-
-        new_file_name = file_name[:idx] + "_seg" + file_name[idx:]
-        new_file = os.path.join(directory, new_file_name)
-
-        command = "python -m jieba -d ' ' {} > {}".format(file, new_file)
+        command = "python -m jieba -d ' ' {} > {}".format(file_path, new_file_path)
         call(command, shell=True)
         print(command)
 
@@ -25,6 +18,8 @@ def main():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--zh_corpus_list", nargs="+")
+    parser.add_argument("--segmented_zh_corpus_list", nargs="+")
+
     args, unknown = parser.parse_known_args()
     segmentation(args)
 

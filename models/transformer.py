@@ -119,7 +119,7 @@ class EncoderLayer(nn.Module):
         # parameter return_attention can only be used during evaluation
 
         # src: (batch_size, input_length, d_model)
-        # src_mask: (batch_size, input_length)
+        # src_mask: (batch_size, 1, 1, src_length)
 
         src_ = self.self_attention_layer(src, src, src, src_mask)
         del src_mask
@@ -183,7 +183,7 @@ class Encoder(nn.Module):
 
     def forward(self, src, src_mask):
         # src: (batch_size, input_length)
-        # src_mask: (batch_size, input_length)
+        # src_mask: (batch_size, 1, 1, src_length)
 
         # src: (batch_size, input_length, d_model)
         src = self.token_embedding(src) * self.scale
@@ -269,8 +269,8 @@ class Decoder(nn.Module):
     def forward(self, tgt, encoder_src, tgt_mask, src_mask):
         # tgt: (batch_size, tgt_input_length, d_model)
         # encoder_src: (batch_size, src_input_length, d_model)
-        # tgt_mask: (batch_size, tgt_input_length)
-        # src_mask: (batch_size, src_input_length)
+        # tgt_mask: (batch_size, 1, tgt_length, tgt_length)
+        # src_mask: (batch_size, 1, 1, src_length)
 
         tgt = self.token_embedding(tgt) * self.scale
 

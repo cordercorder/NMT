@@ -139,7 +139,7 @@ def main():
     parser.add_argument("--file_src_path_list", nargs="+")
     parser.add_argument("--file_tgt_path_list", nargs="+")
 
-    parser.add_argument("--output_directory")
+    parser.add_argument("--output_directory", required=True)
 
     args, unknown = parser.parse_known_args()
 

@@ -9,7 +9,6 @@ from models import S2S_attention
 from utils.data_loader import load_corpus_data, NMTDataset, collate
 from torch.utils.data import DataLoader
 from utils.tools import sort_src_sentence_by_length, save_model, load_model
-import random
 import time
 import math
 import os
@@ -102,9 +101,6 @@ def train(local_rank, args):
     train_loader = DataLoader(train_data, args.batch_size, shuffle=False, sampler=train_sampler, pin_memory=True,
                               collate_fn=lambda batch: collate(batch, padding_value), drop_last=True)
 
-    STEPS = len(range(0, len(src_data), args.batch_size))
-    save_model_steps = max(int(STEPS * args.save_model_steps), 1)
-
     for i in range(args.start_epoch, args.end_epoch):
 
         train_sampler.set_epoch(i)
@@ -144,18 +140,10 @@ def train(local_rank, args):
             epoch_loss += batch_loss
             steps += 1
 
-            if steps % save_model_steps == 0:
-                if local_rank == 0:
-                    torch.save(save_model(s2s, optimizer, args),
-                               args.checkpoint + "_" + str(i) + "_" + str(steps))
-                ppl = math.exp(batch_loss)
-                logging.info("Batch loss: {}, batch perplexity: {}, local rank: {}".format(batch_loss, ppl, local_rank))
-
         epoch_loss /= steps
 
         if local_rank == 0:
-            torch.save(save_model(s2s, optimizer, args),
-                       args.checkpoint + "__{}_{:.6f}".format(i, epoch_loss))
+            torch.save(save_model(s2s, optimizer, args), "{}_{}_{}".format(args.checkpoint, i, steps))
         logging.info("Epoch: {}, time: {} seconds, loss: {}, local rank: {}".format(i, time.time() - start_time,
                                                                                     epoch_loss, local_rank))
 
@@ -197,7 +185,6 @@ def main():
     parser.add_argument("--end_token", default="<e>")
     parser.add_argument("--unk", default="UNK")
     parser.add_argument("--threshold", default=0, type=int)
-    parser.add_argument("--save_model_steps", default=0.3, type=float)
     parser.add_argument("--mask_token", default="<mask>")
 
     parser.add_argument("--rebuild_vocab", action="store_true")

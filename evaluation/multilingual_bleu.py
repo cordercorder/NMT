@@ -1,5 +1,6 @@
 import argparse
 import os
+import json
 
 from utils.tools import read_data
 
@@ -10,6 +11,9 @@ def bleu_calculation(args):
 
     src_file = read_data(args.src_file_path)
     lang_identifier = {}
+
+    with open(args.language_data) as f:
+        language_dict = json.load(f)
 
     for i, sentence in enumerate(src_file):
 
@@ -47,7 +51,11 @@ def bleu_calculation(args):
 
         for lang in lang_identifier:
             bleu_score = corpus_bleu(reference_data_per_language[lang], translation_data_per_language[lang]) * 100
-            print("language: {}, bleu: {}".format(lang, bleu_score))
+            print("language code(IOS639-2): {}, language code(IOS639-3): {}, language name: {}, bleu: {}".format(lang,
+                                                                                                                 language_dict[lang]["ISO639-3"],
+                                                                                                                 language_dict[lang]["language name"],
+                                                                                                                 bleu_score,
+                                                                                                                 ))
 
         print()
 
@@ -58,6 +66,7 @@ def main():
                                                                "src file is language identifier")
     parser.add_argument("--translation_path_list", nargs="+")
     parser.add_argument("--reference_path", required=True)
+    parser.add_argument("--language_data", required=True)
 
     args, unknown = parser.parse_known_args()
     bleu_calculation(args)
