@@ -16,6 +16,7 @@ def decode_batch(s2s: S2S_attention.S2S or S2S_basic.S2S, decoder_input: torch.t
         return s2s.decoder.decode_batch(decoder_input, decoder_hidden_state)
 
 
+@torch.no_grad()
 def greedy_decoding(s2s: S2S_basic.S2S or S2S_attention.S2S or transformer.S2S, data_tensor: torch.tensor,
                     tgt_vocab: Vocab, device: torch.device):
 
