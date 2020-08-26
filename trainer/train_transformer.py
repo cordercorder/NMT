@@ -70,6 +70,11 @@ def train(args):
     criterion = nn.CrossEntropyLoss(ignore_index=padding_value)
 
     train_data = NMTDataset(src_data, tgt_data)
+
+    # release cpu memory
+    del src_data
+    del tgt_data
+
     train_loader = DataLoader(train_data, args.batch_size, shuffle=True, pin_memory=True,
                               collate_fn=lambda batch: collate(batch, padding_value, batch_first=True))
 

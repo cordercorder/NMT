@@ -2,9 +2,18 @@ import argparse
 import os
 import json
 
+from nltk.translate.bleu_score import corpus_bleu
+from typing import Dict
+
 from utils.tools import read_data
 
-from nltk.translate.bleu_score import corpus_bleu
+
+def show_corpus_statistics(lang_identifier: Dict, language_dict: Dict):
+
+    for lang in lang_identifier:
+        print("language code(IOS639-2): {}, language code(IOS639-3): {}, language name: {}, "
+              "sentence number: {}".format(lang, language_dict[lang]["ISO639-3"], language_dict[lang]["language name"],
+                                           len(lang_identifier[lang])))
 
 
 def bleu_calculation(args):
@@ -28,6 +37,8 @@ def bleu_calculation(args):
             lang_identifier[lang_code] = [i]
         else:
             lang_identifier[lang_code].append(i)
+
+    show_corpus_statistics(lang_identifier, language_dict)
 
     reference_data = read_data(args.reference_path)
     reference_data = [[sentence.split()] for sentence in reference_data]

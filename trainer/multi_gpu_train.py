@@ -96,6 +96,10 @@ def train(local_rank, args):
 
     train_data = NMTDataset(src_data, tgt_data)
 
+    # release cpu memory
+    del src_data
+    del tgt_data
+
     train_sampler = torch.utils.data.distributed.DistributedSampler(train_data, num_replicas=args.world_size, rank=rank)
 
     train_loader = DataLoader(train_data, args.batch_size, shuffle=False, sampler=train_sampler, pin_memory=True,

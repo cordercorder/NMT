@@ -1,1 +1,2 @@
-nohup bash quick_eval.sh > /data/rrjin/NMT/data/ted_data/evaluation_logs/transformer/eval_transformer_ted_test_data_logs_beam_size_5.txt 2>&1 &
+# nohup bash quick_eval.sh > /data/rrjin/NMT/data/ted_data/evaluation_logs/transformer/eval_transformer_ted_test_data_logs_beam_size_5.txt 2>&1 &
+nohup bash multi_gpu_quick_eval.sh > /data/rrjin/NMT/data/ted_data_new/evaluation_logs/transformer/eval_transformer_ted_dev_data_logs_greedy.txt 2>&1 &

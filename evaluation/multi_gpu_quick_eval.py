@@ -125,7 +125,7 @@ def evaluation(local_rank, args):
             end_time = time.time()
             logging.info("Time spend: {} seconds".format(end_time - start_time))
 
-        if not os.path.exists(args.translation_output_dir):
+        if not os.path.isdir(args.translation_output_dir):
             os.makedirs(args.translation_output_dir)
 
         _, model_name = os.path.split(model_path)
@@ -144,7 +144,7 @@ def evaluation(local_rank, args):
 
             # replace '@@ ' with ''
             p_tok = os.path.join(args.translation_output_dir,
-                                 "{}__translations_tok.rank{}".format(translation_file_name_prefix, rank))
+                                 "{}_translations_tok.rank{}".format(translation_file_name_prefix, rank))
 
             tok_command = "sed -r 's/(@@ )|(@@ ?$)//g' {} > {}".format(p, p_tok)
 
