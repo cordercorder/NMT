@@ -6,28 +6,16 @@ import torch
 import torch.multiprocessing as mp
 import torch.distributed as dist
 
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader
 from typing import List
 from subprocess import call
 
-from utils.tools import read_data, write_data, load_transformer, load_model
+from utils.tools import read_data, write_data, load_transformer, load_model, SrcData
 from utils.data_loader import convert_data_to_index, pad_data
 from utils.Vocab import Vocab
 from evaluation.S2S_translation import greedy_decoding, beam_search_decoding
 
 logging.basicConfig(level=logging.DEBUG)
-
-
-class PartitionData(Dataset):
-
-    def __init__(self, data: List[List]):
-        self.data = data
-
-    def __getitem__(self, item):
-        return self.data[item]
-
-    def __len__(self):
-        return len(self.data)
 
 
 class DataPartition:
@@ -55,7 +43,7 @@ class DataPartition:
             self.partitions[-1].extend(self.data[num_process * block_size:])
 
     def dataset(self, process_id: int):
-        return PartitionData(self.partitions[process_id])
+        return SrcData(self.partitions[process_id])
 
 
 def evaluation(local_rank, args):
@@ -85,9 +73,10 @@ def evaluation(local_rank, args):
 
     logging.info("dataset size: {}, rank: {}".format(len(dataset), rank))
 
-    data_loader = DataLoader(dataset=dataset, batch_size=(args.batch_size if args.batch_size is not None else 1),
+    data_loader = DataLoader(dataset=dataset, batch_size=(args.batch_size if args.batch_size else 1),
                              shuffle=False, pin_memory=True, drop_last=False,
-                             collate_fn=lambda batch: pad_data(batch, padding_value, batch_first=True))
+                             collate_fn=lambda batch: pad_data(batch, padding_value,
+                                                               batch_first=(True if args.transformer else False)))
 
     if args.beam_size:
         logging.info("Beam size: {}".format(args.beam_size))
@@ -96,7 +85,7 @@ def evaluation(local_rank, args):
         args.model_load = args.model_load + "*"
 
     for model_path in glob.glob(args.model_load):
-        logging.info("Load model from {}".format(model_path))
+        logging.info("Load model from: {}, rank: {}".format(model_path, rank))
 
         if args.transformer:
 
@@ -123,7 +112,7 @@ def evaluation(local_rank, args):
 
         if args.record_time:
             end_time = time.time()
-            logging.info("Time spend: {} seconds".format(end_time - start_time))
+            logging.info("Time spend: {} seconds, rank: {}".format(end_time - start_time, rank))
 
         if not os.path.isdir(args.translation_output_dir):
             os.makedirs(args.translation_output_dir)

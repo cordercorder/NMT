@@ -1,8 +1,12 @@
 import unicodedata
 import re
-from models import S2S_attention, S2S_basic, transformer
 import torch
 import logging
+
+from torch.utils.data import Dataset
+from typing import List
+
+from models import S2S_attention, S2S_basic, transformer
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -203,6 +207,18 @@ def read_data(data_path):
 
         data = f.read().strip().split("\n")
         return data
+
+
+class SrcData(Dataset):
+
+    def __init__(self, data: List[List]):
+        self.data = data
+
+    def __getitem__(self, item: int):
+        return self.data[item]
+
+    def __len__(self):
+        return len(self.data)
 
 
 def test_tools():

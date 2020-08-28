@@ -3,9 +3,10 @@ import argparse
 import os
 import torch
 
+from torch.utils.data import DataLoader
 from subprocess import call
 
-from utils.tools import read_data, load_model, load_transformer, write_data
+from utils.tools import read_data, load_model, load_transformer, write_data, SrcData
 from utils.Vocab import Vocab
 from evaluation.S2S_translation import greedy_decoding, beam_search_decoding
 from utils.data_loader import convert_data_to_index, pad_data
@@ -49,41 +50,21 @@ print("max src sentence length: {}".format(max_src_len))
 # |------------ end ------------|
 
 src_data = convert_data_to_index(src_data, src_vocab)
+src_data = SrcData(src_data)
 
 padding_value = src_vocab.get_index(src_vocab.mask_token)
 assert padding_value == tgt_vocab.get_index(tgt_vocab.mask_token)
 
 if args.batch_size:
-
     assert args.beam_size is None, "batch translation do not support bream search now"
-
-    batch_data_indices = list(range(0, len(src_data), args.batch_size))
-
-    src_data_tensor = []
-
-    for indices in batch_data_indices:
-        src_data_tensor.append(pad_data(src_data[indices: indices + args.batch_size], padding_value,
-                                        True if args.transformer else False))
-
-else:
-
-    src_data_tensor = []
-
-    for data in src_data:
-
-        tmp_tensor = torch.tensor(data)
-
-        if args.transformer:
-            # tmp_tensor: (1, input_length)
-            tmp_tensor = tmp_tensor.unsqueeze(0)
-        else:
-            # tmp_tensor: (input_length, 1)
-            tmp_tensor = tmp_tensor.unsqueeze(1)
-
-        src_data_tensor.append(tmp_tensor)
 
 if args.beam_size:
     print("Beam size: {}".format(args.beam_size))
+
+data_loader = DataLoader(src_data, batch_size=(args.batch_size if args.batch_size else 1), shuffle=False,
+                         collate_fn=lambda batch: pad_data(batch, padding_value,
+                                                           batch_first=(True if args.transformer else False)),
+                         pin_memory=True, drop_last=False)
 
 if args.is_prefix:
     args.model_load = args.model_load + "*"
@@ -108,11 +89,11 @@ for model_path in glob.glob(args.model_load):
         import time
         start_time = time.time()
 
-    for data in src_data_tensor:
+    for data in data_loader:
         if args.beam_size:
-            pred_data.append(beam_search_decoding(s2s, data.to(device), tgt_vocab, args.beam_size, device))
+            pred_data.append(beam_search_decoding(s2s, data.to(device, non_blocking=True), tgt_vocab, args.beam_size, device))
         else:
-            pred_data.extend(greedy_decoding(s2s, data.to(device), tgt_vocab, device))
+            pred_data.extend(greedy_decoding(s2s, data.to(device, non_blocking=True), tgt_vocab, device))
 
     if args.record_time:
         end_time = time.time()
