@@ -90,7 +90,20 @@ def collate(batch, padding_value, batch_first=False):
     src_batch_tensor = pad_data(src_batch, padding_value, batch_first)
     tgt_batch_tensor = pad_data(tgt_batch, padding_value, batch_first)
 
-    return src_batch_tensor, tgt_batch_tensor
+    return ParallelSentenceBatch(src_batch_tensor, tgt_batch_tensor)
+
+
+class ParallelSentenceBatch:
+
+    def __init__(self, src_batch_tensor, tgt_batch_tensor):
+        self.src_batch_tensor = src_batch_tensor
+        self.tgt_batch_tensor = tgt_batch_tensor
+
+    def pin_memory(self):
+        # custom memory pinning method on custom type
+        self.src_batch_tensor = self.src_batch_tensor.pin_memory()
+        self.tgt_batch_tensor = self.tgt_batch_tensor.pin_memory()
+        return self.src_batch_tensor, self.tgt_batch_tensor
 
 
 if __name__ == "__main__":

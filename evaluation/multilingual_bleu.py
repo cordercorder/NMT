@@ -16,6 +16,12 @@ def show_corpus_statistics(lang_identifier: Dict, language_dict: Dict):
                                            len(lang_identifier[lang])))
 
 
+def cmp(item: str):
+    _, file_name = os.path.split(item)
+    file_name = file_name.split("_")
+    return int(file_name[1])
+
+
 def bleu_calculation(args):
 
     src_file = read_data(args.src_file_path)
@@ -47,6 +53,10 @@ def bleu_calculation(args):
     for k, v in lang_identifier.items():
         reference_data_per_language[k] = [reference_data[line_number] for line_number in v]
 
+    args.translation_path_list.sort(key=cmp)
+
+    bleu_score_dict = {lang: [] for lang in lang_identifier}
+
     for translation_path in args.translation_path_list:
 
         _, file_name = os.path.split(translation_path)
@@ -67,8 +77,11 @@ def bleu_calculation(args):
                                                                                                                  language_dict[lang]["language name"],
                                                                                                                  bleu_score,
                                                                                                                  ))
-
+            bleu_score_dict[lang].append(bleu_score)
         print()
+
+    with open(args.bleu_score_data_path, "w") as f:
+        json.dump(bleu_score_dict, f)
 
 
 def main():
@@ -78,6 +91,8 @@ def main():
     parser.add_argument("--translation_path_list", nargs="+")
     parser.add_argument("--reference_path", required=True)
     parser.add_argument("--language_data", required=True)
+
+    parser.add_argument("--bleu_score_data_path", required=True)
 
     args, unknown = parser.parse_known_args()
     bleu_calculation(args)
