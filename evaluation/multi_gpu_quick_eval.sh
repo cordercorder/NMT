@@ -8,7 +8,7 @@ python -u -m evaluation.multi_gpu_quick_eval \
     --test_tgt_path /data/rrjin/NMT/data/ted_data_new/corpus/raw_dev_data_tgt_tok_filtered2.en \
     --src_vocab_path /data/rrjin/NMT/data/ted_data_new/vocab_data/transformer/src_32000_transformer.combine.vocab \
     --tgt_vocab_path /data/rrjin/NMT/data/ted_data_new/vocab_data/transformer/tgt_32000_transformer.en.vocab \
-    --translation_output_dir /data/rrjin/NMT/data/ted_data_new/translation/transformer_dev_beam_size_4 \
+    --translation_output_dir /data/rrjin/NMT/data/ted_data_new/translation/transformer_dev_beam_size_3 \
     --record_time \
     --need_tok \
-    --beam_size 4
+    --beam_size 3
