@@ -16,6 +16,8 @@ def plot_data(sentence_num_per_language: Dict, picture_path: str):
 
     x = list(range(len(lang_list)))
 
+    plt.rcParams["font.family"] = "Times New Roman"
+
     fig, axes = plt.subplots(1, 1, figsize=(20, 5))
     axes.set_xticks(x)
 
@@ -28,7 +30,7 @@ def plot_data(sentence_num_per_language: Dict, picture_path: str):
 
     axes.legend(loc='best')
 
-    axes.set_title("number of sentences per language")
+    axes.set_title("Number of Sentences Per Language")
 
     plt.savefig(picture_path, dpi=200)
     plt.close()

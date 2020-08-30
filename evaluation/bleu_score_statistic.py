@@ -17,7 +17,7 @@ def plot_bleu_score_data(bleu_score_dict: Dict, language_dict: Dict, picture_pat
 
     cur = 0
 
-    fontdict = {"family": "Times New Roman", "size": 18}
+    plt.rcParams["font.family"] = "Times New Roman"
 
     for i in range(num_picture):
 
@@ -28,11 +28,12 @@ def plot_bleu_score_data(bleu_score_dict: Dict, language_dict: Dict, picture_pat
                 epoch_list = bleu_score_dict[lang_list[cur]]
                 axes[row, col].plot(list(range(len(epoch_list))), epoch_list, color="#DE6B58", marker="x",
                                     linestyle="-", linewidth=2, label="BLEU point")
-                axes[row, col].set_xlabel("epoch", fontdict=fontdict)
-                axes[row, col].set_ylabel(language_dict[lang_list[cur]]["language name"], fontdict=fontdict)
+                axes[row, col].set_xlabel("epoch")
+                axes[row, col].set_ylabel("BLEU")
                 axes[row, col].set_xticks(list(range(len(epoch_list))))
                 axes[row, col].grid(which="major", axis="y", linewidth=0.5)
                 axes[row, col].legend(loc="best")
+                axes[row, col].set_title(language_dict[lang_list[cur]]["language name"], fontdict={"size": 20})
 
                 for j in range(len(epoch_list)):
                     axes[row, col].text(j, epoch_list[j], "{:.2f}".format(epoch_list[j]))
