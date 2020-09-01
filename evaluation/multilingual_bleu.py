@@ -11,9 +11,9 @@ from utils.tools import read_data
 def show_corpus_statistics(lang_identifier: Dict, language_dict: Dict):
 
     for lang in lang_identifier:
-        print("language code(IOS639-2): {}, language code(IOS639-3): {}, language name: {}, "
-              "sentence number: {}".format(lang, language_dict[lang]["ISO639-3"], language_dict[lang]["language name"],
-                                           len(lang_identifier[lang])))
+        print("IOS639-2:{},IOS639-3:{},language name:{},"
+              "sentence number:{}".format(lang, language_dict[lang]["ISO639-3"], language_dict[lang]["language name"],
+                                          len(lang_identifier[lang])))
 
 
 def cmp(item: str):
@@ -72,11 +72,9 @@ def bleu_calculation(args):
 
         for lang in lang_identifier:
             bleu_score = corpus_bleu(reference_data_per_language[lang], translation_data_per_language[lang]) * 100
-            print("language code(IOS639-2): {}, language code(IOS639-3): {}, language name: {}, bleu: {}".format(lang,
-                                                                                                                 language_dict[lang]["ISO639-3"],
-                                                                                                                 language_dict[lang]["language name"],
-                                                                                                                 bleu_score,
-                                                                                                                 ))
+            print("IOS639-2:{},IOS639-3:{},language name:{},bleu:{}".format(lang, language_dict[lang]["ISO639-3"],
+                                                                            language_dict[lang]["language name"],
+                                                                            bleu_score))
             bleu_score_dict[lang].append(bleu_score)
         print()
 

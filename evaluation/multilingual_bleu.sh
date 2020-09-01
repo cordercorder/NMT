@@ -1,28 +1,9 @@
 cd ..
 
 python -u -m evaluation.multilingual_bleu \
-    --src_file_path /data/rrjin/NMT/data/ted_data_new/corpus/raw_dev_data_src_tok_joint_bpe_32000_filtered2_sorted.combine \
+    --src_file_path /data/rrjin/NMT/data/ted_data_new/corpus/raw_test_data_src_tok_joint_bpe_32000_filtered1.combine \
     --translation_path_list \
-      /data/rrjin/NMT/data/ted_data_new/translation/transformer_dev_greedy_merged/transformer_0_17861_translations_tok.txt \
-      /data/rrjin/NMT/data/ted_data_new/translation/transformer_dev_greedy_merged/transformer_10_17861_translations_tok.txt \
-      /data/rrjin/NMT/data/ted_data_new/translation/transformer_dev_greedy_merged/transformer_11_17861_translations_tok.txt \
-      /data/rrjin/NMT/data/ted_data_new/translation/transformer_dev_greedy_merged/transformer_1_17861_translations_tok.txt \
-      /data/rrjin/NMT/data/ted_data_new/translation/transformer_dev_greedy_merged/transformer_12_17861_translations_tok.txt \
-      /data/rrjin/NMT/data/ted_data_new/translation/transformer_dev_greedy_merged/transformer_13_17861_translations_tok.txt \
-      /data/rrjin/NMT/data/ted_data_new/translation/transformer_dev_greedy_merged/transformer_14_17861_translations_tok.txt \
-      /data/rrjin/NMT/data/ted_data_new/translation/transformer_dev_greedy_merged/transformer_15_17861_translations_tok.txt \
-      /data/rrjin/NMT/data/ted_data_new/translation/transformer_dev_greedy_merged/transformer_16_17861_translations_tok.txt \
-      /data/rrjin/NMT/data/ted_data_new/translation/transformer_dev_greedy_merged/transformer_17_17861_translations_tok.txt \
-      /data/rrjin/NMT/data/ted_data_new/translation/transformer_dev_greedy_merged/transformer_18_17861_translations_tok.txt \
-      /data/rrjin/NMT/data/ted_data_new/translation/transformer_dev_greedy_merged/transformer_19_17861_translations_tok.txt \
-      /data/rrjin/NMT/data/ted_data_new/translation/transformer_dev_greedy_merged/transformer_2_17861_translations_tok.txt \
-      /data/rrjin/NMT/data/ted_data_new/translation/transformer_dev_greedy_merged/transformer_3_17861_translations_tok.txt \
-      /data/rrjin/NMT/data/ted_data_new/translation/transformer_dev_greedy_merged/transformer_4_17861_translations_tok.txt \
-      /data/rrjin/NMT/data/ted_data_new/translation/transformer_dev_greedy_merged/transformer_5_17861_translations_tok.txt \
-      /data/rrjin/NMT/data/ted_data_new/translation/transformer_dev_greedy_merged/transformer_6_17861_translations_tok.txt \
-      /data/rrjin/NMT/data/ted_data_new/translation/transformer_dev_greedy_merged/transformer_7_17861_translations_tok.txt \
-      /data/rrjin/NMT/data/ted_data_new/translation/transformer_dev_greedy_merged/transformer_8_17861_translations_tok.txt \
-      /data/rrjin/NMT/data/ted_data_new/translation/transformer_dev_greedy_merged/transformer_9_17861_translations_tok.txt \
-    --reference_path /data/rrjin/NMT/data/ted_data_new/corpus/raw_dev_data_tgt_tok_filtered2_sorted.en \
+      /data/rrjin/NMT/data/ted_data_new/translation/transformer_test_beam_size_5_merged/transformer_6_17861_beam_size5_translations_tok.txt \
+    --reference_path /data/rrjin/NMT/data/ted_data_new/corpus/raw_test_data_tgt_tok_filtered1.en \
     --language_data /data/rrjin/NMT/data/ted_data_new/ted_lang_tok_to_languages.json \
-    --bleu_score_data_path /data/rrjin/NMT/data/ted_data_new/translation/transformer_dev_greedy_bleu_score_statistic.json
+    --bleu_score_data_path /data/rrjin/NMT/data/ted_data_new/translation/transformer_test_beam_search_5_bleu_score_statistic.json
