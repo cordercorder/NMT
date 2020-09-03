@@ -22,7 +22,9 @@ def cmp(item: str):
     return int(file_name[1])
 
 
-def bleu_calculation(args):
+def multilingual_bleu_calculation(args):
+
+    assert args.src_file_path is not None and args.language_data is not None
 
     src_file = read_data(args.src_file_path)
     lang_identifier = {}
@@ -59,9 +61,7 @@ def bleu_calculation(args):
 
     for translation_path in args.translation_path_list:
 
-        _, file_name = os.path.split(translation_path)
-
-        print("Translation in: {}\n".format(file_name))
+        print("Translation in: {}\n".format(translation_path))
 
         translation_data = read_data(translation_path)
         translation_data = [sentence.split() for sentence in translation_data]
@@ -78,22 +78,56 @@ def bleu_calculation(args):
             bleu_score_dict[lang].append(bleu_score)
         print()
 
+    print("Writing data to: {}".format(args.bleu_score_data_path))
+
     with open(args.bleu_score_data_path, "w") as f:
         json.dump(bleu_score_dict, f)
 
 
+def bilingual_bleu_calculation(args):
+
+    reference_data = read_data(args.reference_path)
+
+    reference_data = [[sentence.split()] for sentence in reference_data]
+
+    args.translation_path_list.sort(key=cmp)
+
+    blue_score_data = []
+
+    for translation_path in args.translation_path_list:
+
+        print("Translation in: {}\n".format(translation_path))
+
+        translation_data = read_data(translation_path)
+        translation_data = [sentence.split() for sentence in translation_data]
+
+        bleu_score = corpus_bleu(reference_data, translation_data) * 100
+        blue_score_data.append(bleu_score)
+
+        print("bleu:{}".format(bleu_score))
+
+    print("Writing data to: {}".format(args.bleu_score_data_path))
+
+    with open(args.bleu_score_data_path) as f:
+        json.dump(blue_score_data, f)
+
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--src_file_path", required=True, help="The first token in sentences of "
-                                                               "src file is language identifier")
+    parser.add_argument("--src_file_path", help="The first token in sentences of src file is language identifier")
     parser.add_argument("--translation_path_list", nargs="+")
     parser.add_argument("--reference_path", required=True)
-    parser.add_argument("--language_data", required=True)
+    parser.add_argument("--language_data")
 
     parser.add_argument("--bleu_score_data_path", required=True)
+    parser.add_argument("--multilingual", action="store_true")
 
     args, unknown = parser.parse_known_args()
-    bleu_calculation(args)
+
+    if args.multilingual:
+        multilingual_bleu_calculation(args)
+    else:
+        bilingual_bleu_calculation(args)
 
 
 if __name__ == "__main__":
