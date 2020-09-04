@@ -2,7 +2,8 @@ import argparse
 import torch
 from utils.Vocab import Vocab
 from utils.tools import load_model, read_data, write_data, load_transformer
-from evaluation.S2S_translation import get_initial_decoder_hidden_state, decode_batch
+from utils.combine_bidir_state import combine_bidir_hidden_state
+from evaluation.S2S_translation import decode_batch
 from lang_vec.lang_vec_tools import load_lang_vec
 from models import S2S_basic, S2S_attention, transformer
 from subprocess import call
@@ -38,7 +39,7 @@ def translate_rnn(line: str, line_number: int, s2s: S2S_basic.S2S or S2S_attenti
 
     encoder_output, encoder_hidden_state = s2s.encoder.rnn(input_embedding)
 
-    decoder_hidden_state = get_initial_decoder_hidden_state(s2s, encoder_hidden_state)
+    decoder_hidden_state = combine_bidir_hidden_state(s2s, encoder_hidden_state)
 
     decoder_input = torch.tensor([[tgt_vocab.get_index(tgt_vocab.start_token)]], device=device)
 
