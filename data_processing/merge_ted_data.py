@@ -31,6 +31,7 @@ def merge(corpus_path: str):
         for corpus_file_name in os.listdir(corpus_dir):
 
             corpus_file_path = os.path.join(corpus_dir, corpus_file_name)
+            print(corpus_file_path)
 
             data = read_data(corpus_file_path)
 
@@ -70,20 +71,23 @@ def merge(corpus_path: str):
     assert check(train_data_src, train_data_tgt) and check(dev_data_src, dev_data_tgt) and \
            check(test_data_src, test_data_tgt)
 
-    output_dir = "/data/rrjin/NMT/data/ted_data_new/corpus"
+    output_dir = "/data/rrjin/NMT/data/ted_data/corpus"
 
-    write_data(train_data_src, os.path.join(output_dir, "raw_train_data_src.combine"))
-    write_data(train_data_tgt, os.path.join(output_dir, "raw_train_data_tgt.en"))
+    if not os.path.isdir(output_dir):
+        os.makedirs(output_dir)
 
-    write_data(dev_data_src, os.path.join(output_dir, "raw_dev_data_src.combine"))
-    write_data(dev_data_tgt, os.path.join(output_dir, "raw_dev_data_tgt.en"))
+    write_data(train_data_src, os.path.join(output_dir, "train_data_src.combine"))
+    write_data(train_data_tgt, os.path.join(output_dir, "train_data_tgt.en"))
 
-    write_data(test_data_src, os.path.join(output_dir, "raw_test_data_src.combine"))
-    write_data(test_data_tgt, os.path.join(output_dir, "raw_test_data_tgt.en"))
+    write_data(dev_data_src, os.path.join(output_dir, "dev_data_src.combine"))
+    write_data(dev_data_tgt, os.path.join(output_dir, "dev_data_tgt.en"))
+
+    write_data(test_data_src, os.path.join(output_dir, "test_data_src.combine"))
+    write_data(test_data_tgt, os.path.join(output_dir, "test_data_tgt.en"))
 
 
 def main():
-    corpus_path = "/data/rrjin/corpus_data/ted_data"
+    corpus_path = "/data/rrjin/corpus_data/tokenized_ted_data"
     merge(corpus_path)
 
 

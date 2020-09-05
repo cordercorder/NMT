@@ -24,6 +24,8 @@ def sort_sentence(args):
 
 def remove_long_sentence(args):
 
+    assert args.max_sentence_length is not None
+
     for src_file_path, tgt_file_path, filtered_src_file_path, filtered_tgt_file_path in zip(args.src_file_path_list,
                                                                                             args.tgt_file_path_list,
                                                                                             args.output_src_file_path_list,
@@ -51,7 +53,13 @@ def remove_long_sentence(args):
 def remove_same_sentence(args):
 
     if args.src_memory_path:
-        src_memory = set(read_data(args.src_memory_path))
+        src_memory_list = []
+
+        for memory_path in args.src_memory_path:
+            src_memory_list.extend(read_data(memory_path))
+
+        src_memory = set(src_memory_list)
+
     else:
         src_memory = set()
 
@@ -106,12 +114,9 @@ def main():
                                                                "remove_same_sentence"])
     parser.add_argument("--max_sentence_length", type=int)
 
-    parser.add_argument("--src_memory_path", help="the set of sentences that need to be removed")
+    parser.add_argument("--src_memory_path",  nargs="+", help="the set of sentences that need to be removed")
 
     args, unknown = parser.parse_known_args()
-
-    if args.operation == "remove_long_sentence":
-        assert args.max_sentence_length is not None
 
     assert len(args.src_file_path_list) == len(args.tgt_file_path_list) == len(args.output_src_file_path_list) == \
            len(args.output_tgt_file_path_list)

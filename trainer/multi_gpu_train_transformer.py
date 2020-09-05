@@ -18,7 +18,13 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 def train(local_rank, args):
+
     rank = args.nr * args.gpus + local_rank
+
+    saved_model_dir, _ = os.path.split(args.checkpoint)
+
+    if not os.path.isdir(saved_model_dir):
+        os.makedirs(saved_model_dir)
 
     src_data, src_vocab = load_corpus_data(args.src_path, args.src_language, args.start_token, args.end_token,
                                            args.mask_token, args.src_vocab_path, args.rebuild_vocab, args.unk,

@@ -131,7 +131,7 @@ class Vocab:
 
         directory, file_name = os.path.split(save_path)
 
-        if not os.path.exists(directory):
+        if not os.path.isdir(directory):
             os.makedirs(directory)
 
         entity = {
