@@ -1,6 +1,7 @@
 import json
 import argparse
 import matplotlib.pyplot as plt
+import os
 
 from typing import Dict
 
@@ -34,6 +35,11 @@ def plot_data(sentence_num_per_language: Dict, language_dict: Dict, picture_path
     axes.legend(loc='best')
 
     axes.set_title("Number of Sentences Per Language")
+
+    picture_dir, _ = os.path.split(picture_path)
+
+    if not os.path.isdir(picture_dir):
+        os.makedirs(picture_dir)
 
     plt.savefig(picture_path, dpi=600)
     plt.close()

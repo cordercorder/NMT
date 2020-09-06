@@ -2,6 +2,7 @@ import os
 import glob
 import logging
 import argparse
+import math
 import torch
 import torch.multiprocessing as mp
 import torch.distributed as dist
@@ -20,27 +21,43 @@ logging.basicConfig(level=logging.DEBUG)
 
 class DataPartition:
 
-    def __init__(self, data: List[List], num_process: int):
+    def __init__(self, data: List[List[int]], num_process: int, work_load_per_process: List[float]):
 
         assert num_process > 0
 
         self.data = data
         self.num_process = num_process
 
-        # self.partitions List[List[List]]
+        # self.partitions List[List[List[int]]]
         self.partitions = []
 
-        block_size = len(self.data) // num_process
+        if work_load_per_process is None:
 
-        for i in range(num_process):
+            block_size = len(self.data) // num_process
 
-            if i == 0:
-                self.partitions.append(self.data[:block_size])
-            else:
-                self.partitions.append(self.data[i*block_size: (i+1)*block_size])
+            for i in range(num_process):
 
-        if len(self.data) % num_process != 0:
-            self.partitions[-1].extend(self.data[num_process * block_size:])
+                if i == 0:
+                    self.partitions.append(self.data[:block_size])
+                else:
+                    self.partitions.append(self.data[i*block_size: (i+1)*block_size])
+
+            if len(self.data) % num_process != 0:
+                self.partitions[-1].extend(self.data[num_process * block_size:])
+
+        else:
+
+            work_load_sum = sum(work_load_per_process)
+            last = 0
+            for i in range(num_process):
+
+                work_load = math.floor((work_load_per_process[i] / work_load_sum) * len(self.data))
+                now = last + work_load
+                self.partitions.append(self.data[last: now])
+                last = now
+
+            if last != len(self.data):
+                self.partitions[-1].extend(self.data[last:])
 
     def dataset(self, process_id: int):
         return SrcData(self.partitions[process_id])
@@ -54,6 +71,7 @@ def evaluation(local_rank, args):
     device = torch.device("cuda", local_rank)
     torch.cuda.set_device(device)
 
+    # List[str]
     src_data = read_data(args.test_src_path)
 
     max_src_len = max(len(line.split()) for line in src_data) + 2
@@ -69,7 +87,7 @@ def evaluation(local_rank, args):
 
     src_data = convert_data_to_index(src_data, src_vocab)
 
-    dataset = DataPartition(src_data, args.world_size).dataset(rank)
+    dataset = DataPartition(src_data, args.world_size, args.work_load_per_process).dataset(rank)
 
     logging.info("dataset size: {}, rank: {}".format(len(dataset), rank))
 
@@ -166,12 +184,17 @@ def main():
 
     parser.add_argument("--batch_size", type=int)
 
+    parser.add_argument("--work_load_per_process", nargs="*", type=float)
+
     args, unknown = parser.parse_known_args()
     os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(str(idx) for idx in args.device_id)
 
     args.gpus = len(args.device_id)
 
     args.world_size = args.gpus * args.nodes
+
+    if args.work_load_per_process:
+        assert len(args.work_load_per_process) == args.world_size
 
     mp.spawn(evaluation, nprocs=args.gpus, args=(args,))
 

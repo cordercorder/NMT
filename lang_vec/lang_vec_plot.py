@@ -43,22 +43,21 @@ def plot_lang_vec(args):
 
     plt.rcParams["font.family"] = "Times New Roman"
 
-    fig, axes = plt.subplots(1, 1)
+    fig, axes = plt.subplots(1, 1, figsize=(17, 10))
 
     for family in family_to_language:
-        if family == "unknown":
-            for lang_id in family_to_language[family]:
-                axes.scatter(X_tsne[lang_id, 0], X_tsne[lang_id, 1])
-        else:
-            language_id_set = family_to_language[family]
-            axes.scatter(X_tsne[language_id_set, 0], X_tsne[language_id_set, 1])
+        language_id_set = family_to_language[family]
+        axes.scatter(X_tsne[language_id_set, 0], X_tsne[language_id_set, 1], label=family)
 
     assert len(labels_639_3) == X_tsne.shape[0]
 
     for i in range(X_tsne.shape[0]):
         axes.text(X_tsne[i][0], X_tsne[i][1], labels_639_3[i])
+
     axes.set_title("Language Embedding Visualization")
-    plt.savefig(args.picture_path, dpi=300)
+    axes.grid(linewidth=0.25, which="major")
+    axes.legend(loc='best')
+    plt.savefig(args.picture_path, dpi=600)
     plt.close()
 
 
