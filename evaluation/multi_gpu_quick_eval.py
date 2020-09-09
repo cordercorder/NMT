@@ -96,6 +96,9 @@ def evaluation(local_rank, args):
                              collate_fn=lambda batch: pad_data(batch, padding_value,
                                                                batch_first=(True if args.transformer else False)))
 
+    if not os.path.isdir(args.translation_output_dir):
+        os.makedirs(args.translation_output_dir)
+
     if args.beam_size:
         logging.info("Beam size: {}".format(args.beam_size))
 
@@ -131,9 +134,6 @@ def evaluation(local_rank, args):
         if args.record_time:
             end_time = time.time()
             logging.info("Time spend: {} seconds, rank: {}".format(end_time - start_time, rank))
-
-        if not os.path.isdir(args.translation_output_dir):
-            os.makedirs(args.translation_output_dir)
 
         _, model_name = os.path.split(model_path)
 
@@ -172,7 +172,6 @@ def main():
     parser.add_argument("--is_prefix", action="store_true")
 
     parser.add_argument("--test_src_path", required=True)
-    parser.add_argument("--test_tgt_path", required=True)
     parser.add_argument("--src_vocab_path", required=True)
     parser.add_argument("--tgt_vocab_path", required=True)
 

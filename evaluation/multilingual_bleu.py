@@ -1,11 +1,16 @@
 import argparse
 import os
 import json
+import logging
 
-from nltk.translate.bleu_score import corpus_bleu
+from nltk.translate.bleu_score import corpus_bleu as nltk_corpus_bleu
+from sacrebleu import corpus_bleu as sacre_corpus_bleu
+
 from typing import Dict
 
 from utils.tools import read_data
+
+logging.disable(logging.WARNING)
 
 
 def show_corpus_statistics(lang_identifier: Dict, language_dict: Dict):
@@ -25,6 +30,10 @@ def cmp(item: str):
 def multilingual_bleu_calculation(args):
 
     assert args.src_file_path is not None and args.language_data is not None
+
+    bleu_score_type = args.bleu_score_type
+
+    corpus_bleu = nltk_corpus_bleu if bleu_score_type == "nltk_bleu" else sacre_corpus_bleu
 
     src_file = read_data(args.src_file_path)
     lang_identifier = {}
@@ -49,11 +58,18 @@ def multilingual_bleu_calculation(args):
     show_corpus_statistics(lang_identifier, language_dict)
 
     reference_data = read_data(args.reference_path)
-    reference_data = [[sentence.split()] for sentence in reference_data]
+
+    if bleu_score_type == "nltk_bleu":
+        reference_data = [[sentence.split()] for sentence in reference_data]
 
     reference_data_per_language = {}
+
     for k, v in lang_identifier.items():
+
         reference_data_per_language[k] = [reference_data[line_number] for line_number in v]
+
+        if bleu_score_type == "sacrebleu":
+            reference_data_per_language[k] = [reference_data_per_language[k]]
 
     args.translation_path_list.sort(key=cmp)
 
@@ -64,18 +80,25 @@ def multilingual_bleu_calculation(args):
         print("Translation in: {}\n".format(translation_path))
 
         translation_data = read_data(translation_path)
-        translation_data = [sentence.split() for sentence in translation_data]
+
+        if bleu_score_type == "nltk_bleu":
+            translation_data = [sentence.split() for sentence in translation_data]
 
         translation_data_per_language = {}
         for k, v in lang_identifier.items():
             translation_data_per_language[k] = [translation_data[line_number] for line_number in v]
 
         for lang in lang_identifier:
-            bleu_score = corpus_bleu(reference_data_per_language[lang], translation_data_per_language[lang]) * 100
+
+            if bleu_score_type == "nltk_bleu":
+                bleu_score = corpus_bleu(reference_data_per_language[lang], translation_data_per_language[lang]) * 100
+            else:
+                bleu_score = corpus_bleu(translation_data_per_language[lang], reference_data_per_language[lang])
+
             print("IOS639-2:{},IOS639-3:{},language name:{},bleu:{}".format(lang, language_dict[lang]["ISO639-3"],
                                                                             language_dict[lang]["language name"],
                                                                             bleu_score))
-            bleu_score_dict[lang].append(bleu_score)
+            bleu_score_dict[lang].append(bleu_score if bleu_score_type == "nltk_bleu" else bleu_score.score)
         print()
 
     print("Writing data to: {}".format(args.bleu_score_data_path))
@@ -86,9 +109,16 @@ def multilingual_bleu_calculation(args):
 
 def bilingual_bleu_calculation(args):
 
+    bleu_score_type = args.bleu_score_type
+
+    corpus_bleu = nltk_corpus_bleu if bleu_score_type == "nltk_bleu" else sacre_corpus_bleu
+
     reference_data = read_data(args.reference_path)
 
-    reference_data = [[sentence.split()] for sentence in reference_data]
+    if bleu_score_type == "nltk_bleu":
+        reference_data = [[sentence.split()] for sentence in reference_data]
+    else:
+        reference_data = [reference_data]
 
     args.translation_path_list.sort(key=cmp)
 
@@ -99,9 +129,14 @@ def bilingual_bleu_calculation(args):
         print("Translation in: {}\n".format(translation_path))
 
         translation_data = read_data(translation_path)
-        translation_data = [sentence.split() for sentence in translation_data]
 
-        bleu_score = corpus_bleu(reference_data, translation_data) * 100
+        if bleu_score_type == "nltk_bleu":
+            translation_data = [sentence.split() for sentence in translation_data]
+            bleu_score = corpus_bleu(reference_data, translation_data) * 100
+
+        else:
+            bleu_score = corpus_bleu(translation_data, reference_data)
+
         blue_score_data.append(bleu_score)
 
         print("bleu:{}".format(bleu_score))
@@ -121,6 +156,8 @@ def main():
 
     parser.add_argument("--bleu_score_data_path", required=True)
     parser.add_argument("--multilingual", action="store_true")
+
+    parser.add_argument("--bleu_score_type", required=True, choices=["nltk_bleu", "sacrebleu"])
 
     args, unknown = parser.parse_known_args()
 
