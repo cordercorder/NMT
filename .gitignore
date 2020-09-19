@@ -7,3 +7,6 @@ data_processing/corpus_data.py
 trainer/multilingual_transformer.py
 trainer/multilingual_transformer.sh
 data_processing/test_sacrebleu.py
+models/multilingual_decoder.py
+data_processing/get_vocab.py
+data_processing/get_vocab.sh

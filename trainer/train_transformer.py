@@ -9,6 +9,7 @@ from torch.utils.data import DataLoader
 from utils.data_loader import load_corpus_data, NMTDataset, collate
 from utils.tools import sort_src_sentence_by_length, save_transformer, load_transformer
 from models import transformer
+from utils.Criterion import LabelSmoothingLoss
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -68,7 +69,10 @@ def train(args):
 
     s2s.train()
 
-    criterion = nn.CrossEntropyLoss(ignore_index=padding_value)
+    if args.label_smoothing:
+        criterion = LabelSmoothingLoss(args.label_smoothing, padding_value)
+    else:
+        criterion = nn.CrossEntropyLoss(ignore_index=padding_value)
 
     train_data = NMTDataset(src_data, tgt_data)
 
@@ -136,6 +140,7 @@ def main():
     parser.add_argument("--unk", default="UNK")
     parser.add_argument("--threshold", default=0, type=int)
     parser.add_argument("--mask_token", default="<mask>")
+    parser.add_argument("--label_smoothing", default=0.1, type=float)
 
     parser.add_argument("--rebuild_vocab", action="store_true")
     parser.add_argument("--sort_sentence_by_length", action="store_true")

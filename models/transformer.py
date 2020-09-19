@@ -355,9 +355,13 @@ class S2S(nn.Module):
         output = self(input_batch, target_batch[:, :-1])
         del input_batch
 
-        target_batch = target_batch[:, 1:]
+        # output: (batch_size * (tgt_input_length - 1), tgt_vocab_size)
+        output = output.view(-1, output.size(-1))
 
-        batch_loss = criterion(output.transpose(1, 2), target_batch)
+        # target_batch: (batch_size * (tgt_input_length - 1))
+        target_batch = target_batch[:, 1:].contiguous().view(-1)
+
+        batch_loss = criterion(output, target_batch)
         del output
         del target_batch
 

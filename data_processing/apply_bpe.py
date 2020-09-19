@@ -22,6 +22,9 @@ class JointBPE:
 
         print("Learn Joint BPE")
 
+        if not os.path.isdir(self.directory_path):
+            os.makedirs(self.directory_path)
+
         self.codes_file_path = os.path.join(self.directory_path, "codes_file_joint_bpe_" + str(self.num_operations))
         self.src_vocab_path = os.path.join(self.directory_path, "src_vocab_joint_bpe_" + str(self.num_operations))
         self.tgt_vocab_path = os.path.join(self.directory_path, "tgt_vocab_joint_bpe_" + str(self.num_operations))
@@ -80,6 +83,9 @@ class IndividualBPE:
     def learn_bpe(self):
 
         print("Learn BPE")
+
+        if not os.path.isdir(self.directory_path):
+            os.makedirs(self.directory_path)
 
         self.codes_file_src_path = os.path.join(self.directory_path, "codes_file_src_bpe_" + str(self.num_operations))
         self.codes_file_tgt_path = os.path.join(self.directory_path, "codes_file_tgt_bpe_" + str(self.num_operations))

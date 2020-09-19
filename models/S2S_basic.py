@@ -200,12 +200,13 @@ class S2S(nn.Module):
         output = self(input_batch, target_batch)
         del input_batch
 
-        # output: (input_length - 1, batch_size, vocab_size)
+        # output: ((input_length - 1) * batch_size, vocab_size)
         output = torch.stack(output, dim=0)
+        output = output.view(-1, output.size(-1))
 
-        # output: (batch_size, vocab_size, input_length - 1)
-        # target: (batch_size, input_length - 1)
-        batch_loss = criterion(output.permute(1, 2, 0), target_batch[1:].transpose(0, 1))
+        # target_batch: ((input_length - 1) * batch_size)
+        target_batch = target_batch[1:].contiguous().view(-1)
+        batch_loss = criterion(output, target_batch)
         del output
         del target_batch
 
