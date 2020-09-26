@@ -10,3 +10,7 @@ data_processing/test_sacrebleu.py
 models/multilingual_decoder.py
 data_processing/get_vocab.py
 data_processing/get_vocab.sh
+data_processing/language_select.py
+data_processing/validate_data.py
+data_processing/vocab_to_txt.py
+data_processing/vocab_to_txt.sh

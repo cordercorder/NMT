@@ -5,6 +5,8 @@ import logging
 
 from torch.utils.data import Dataset
 from typing import List
+import numpy as np
+import random
 
 from models import S2S_attention, S2S_basic, transformer
 
@@ -219,6 +221,14 @@ class SrcData(Dataset):
 
     def __len__(self):
         return len(self.data)
+
+
+def setup_seed(seed: int):
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    np.random.seed(seed)
+    random.seed(seed)
 
 
 def test_tools():
