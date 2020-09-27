@@ -211,18 +211,6 @@ def read_data(data_path):
         return data
 
 
-class SrcData(Dataset):
-
-    def __init__(self, data: List[List]):
-        self.data = data
-
-    def __getitem__(self, item: int):
-        return self.data[item]
-
-    def __len__(self):
-        return len(self.data)
-
-
 def setup_seed(seed: int):
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)

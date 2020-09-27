@@ -14,3 +14,7 @@ data_processing/language_select.py
 data_processing/validate_data.py
 data_processing/vocab_to_txt.py
 data_processing/vocab_to_txt.sh
+data_processing/translation_checker.py
+data_processing/translation_checker.sh
+data_processing/extract_lang_identifier.py
+data_processing/extract_lang_identifier.sh

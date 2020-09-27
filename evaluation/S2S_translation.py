@@ -18,17 +18,17 @@ def decode_batch(s2s: S2S_attention.S2S or S2S_basic.S2S, decoder_input: torch.t
 
 @torch.no_grad()
 def greedy_decoding(s2s: S2S_basic.S2S or S2S_attention.S2S or transformer.S2S, data_tensor: torch.tensor,
-                    tgt_vocab: Vocab, device: torch.device):
+                    tgt_vocab: Vocab, device: torch.device, tgt_prefix: List[str] = None):
 
     if isinstance(s2s, transformer.S2S):
-        return greedy_decoding_transformer(s2s, data_tensor, tgt_vocab, device)
+        return greedy_decoding_transformer(s2s, data_tensor, tgt_vocab, device, tgt_prefix)
 
     return greedy_decoding_rnn(s2s, data_tensor, tgt_vocab, device)
 
 
 def convert_index_to_token(pred_list: List[List], tgt_vocab: Vocab, batch_size: int, end_token_index: int):
 
-    # pred_line: List[List] (batch_size, tgt_length)
+    # pred_line: List[List] (tgt_length, batch_size)
     pred_line = []
 
     for j in range(batch_size):
@@ -44,7 +44,7 @@ def convert_index_to_token(pred_list: List[List], tgt_vocab: Vocab, batch_size: 
 
 @torch.no_grad()
 def greedy_decoding_transformer(s2s: transformer.S2S, data_tensor: torch.tensor, tgt_vocab: Vocab,
-                                device: torch.device):
+                                device: torch.device, tgt_prefix: List[str] = None):
 
     # src: (batch_size, input_length)
     src = data_tensor
@@ -60,11 +60,21 @@ def greedy_decoding_transformer(s2s: transformer.S2S, data_tensor: torch.tensor,
     # pred_list: List[List] (tgt_length, batch_size)
     pred_list = []
 
+    if tgt_prefix is not None:
+        # tgt_prefix_tensor: (batch_size, )
+        tgt_prefix = [tgt_vocab.get_index(prefix_token) for prefix_token in tgt_prefix]
+        tgt_prefix_tensor = torch.tensor(tgt_prefix, device=device)
+        # tgt_prefix_tensor: (batch_size, 1)
+        tgt_prefix_tensor = tgt_prefix_tensor.unsqueeze(1)
+        # tgt: (batch_size, 2)
+        tgt = torch.cat([tgt, tgt_prefix_tensor], dim=1)
+        pred_list.append(tgt_prefix)
+
     max_length = src.size(1) * 3
 
     end_token_index = tgt_vocab.get_index(tgt_vocab.end_token)
 
-    for i in range(max_length):
+    for i in range(0 if tgt_prefix is None else 1, max_length):
 
         # tgt: (batch_size, i + 1)
         tgt_mask = s2s.make_tgt_mask(tgt)

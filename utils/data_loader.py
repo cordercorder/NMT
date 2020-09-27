@@ -10,7 +10,7 @@ class NMTDataset(Dataset):
 
     def __init__(self, src_data, tgt_data):
 
-        self.data = list(zip(src_data,tgt_data))
+        self.data = list(zip(src_data, tgt_data))
 
     def __getitem__(self, item):
         return self.data[item]
@@ -93,6 +93,17 @@ def collate(batch, padding_value, batch_first=False):
     return ParallelSentenceBatch(src_batch_tensor, tgt_batch_tensor)
 
 
+def collate_eval(batch, padding_value, batch_first):
+
+    if isinstance(batch[0], tuple):
+        src_batch, tgt_prefix_batch = zip(*batch)
+    else:
+        src_batch = batch
+        tgt_prefix_batch = None
+    src_batch_tensor = pad_data(src_batch, padding_value, batch_first)
+    return SrcDataBatch(src_batch_tensor, tgt_prefix_batch)
+
+
 class ParallelSentenceBatch:
 
     def __init__(self, src_batch_tensor, tgt_batch_tensor):
@@ -104,6 +115,35 @@ class ParallelSentenceBatch:
         self.src_batch_tensor = self.src_batch_tensor.pin_memory()
         self.tgt_batch_tensor = self.tgt_batch_tensor.pin_memory()
         return self.src_batch_tensor, self.tgt_batch_tensor
+
+
+class SrcData(Dataset):
+
+    def __init__(self, data: List[List[int]], tgt_prefix_data: List[str]):
+        self.data = data
+        self.tgt_prefix_data = tgt_prefix_data
+
+    def __getitem__(self, item: int):
+
+        if self.tgt_prefix_data is None:
+            return self.data[item]
+        else:
+            return self.data[item], self.tgt_prefix_data[item]
+
+    def __len__(self):
+        return len(self.data)
+
+
+class SrcDataBatch:
+
+    def __init__(self, src_batch_tensor, tgt_prefix_batch):
+        self.src_batch_tensor = src_batch_tensor
+        self.tgt_prefix_batch = tgt_prefix_batch
+
+    def pin_memory(self):
+        # custom memory pinning method on custom type
+        self.src_batch_tensor = self.src_batch_tensor.pin_memory()
+        return self.src_batch_tensor, self.tgt_prefix_batch
 
 
 if __name__ == "__main__":

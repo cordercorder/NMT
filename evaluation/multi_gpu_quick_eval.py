@@ -11,8 +11,8 @@ from torch.utils.data import DataLoader
 from typing import List
 from subprocess import call
 
-from utils.tools import read_data, write_data, load_transformer, load_model, SrcData
-from utils.data_loader import convert_data_to_index, pad_data
+from utils.tools import read_data, write_data, load_transformer, load_model
+from utils.data_loader import convert_data_to_index, SrcData, collate_eval
 from utils.Vocab import Vocab
 from evaluation.S2S_translation import greedy_decoding, beam_search_decoding
 
@@ -21,7 +21,8 @@ logging.basicConfig(level=logging.DEBUG)
 
 class DataPartition:
 
-    def __init__(self, data: List[List[int]], num_process: int, work_load_per_process: List[float]):
+    def __init__(self, data: List[List[int]], num_process: int, tgt_prefix_data: List[str],
+                 work_load_per_process: List[float]):
 
         assert num_process > 0
 
@@ -31,36 +32,41 @@ class DataPartition:
         # self.partitions List[List[List[int]]]
         self.partitions = []
 
+        self.tgt_prefix_data_partitions = []
+
         if work_load_per_process is None:
 
             block_size = len(self.data) // num_process
-
+            last = 0
             for i in range(num_process):
+                now = last + block_size
+                self.partitions.append(self.data[last: now])
 
-                if i == 0:
-                    self.partitions.append(self.data[:block_size])
-                else:
-                    self.partitions.append(self.data[i*block_size: (i+1)*block_size])
+                self.tgt_prefix_data_partitions.append(tgt_prefix_data[last: now]
+                                                       if tgt_prefix_data is not None else None)
 
-            if len(self.data) % num_process != 0:
-                self.partitions[-1].extend(self.data[num_process * block_size:])
-
+                last = now
         else:
 
             work_load_sum = sum(work_load_per_process)
             last = 0
             for i in range(num_process):
-
                 work_load = math.floor((work_load_per_process[i] / work_load_sum) * len(self.data))
                 now = last + work_load
                 self.partitions.append(self.data[last: now])
+
+                self.tgt_prefix_data_partitions.append(tgt_prefix_data[last: now]
+                                                       if tgt_prefix_data is not None else None)
+
                 last = now
 
-            if last != len(self.data):
-                self.partitions[-1].extend(self.data[last:])
+        if last != len(self.data):
+            self.partitions[-1].extend(self.data[last:])
+            if tgt_prefix_data is not None:
+                self.tgt_prefix_data_partitions[-1].extend(tgt_prefix_data[last:])
 
     def dataset(self, process_id: int):
-        return SrcData(self.partitions[process_id])
+        return SrcData(self.partitions[process_id], self.tgt_prefix_data_partitions[process_id])
 
 
 def evaluation(local_rank, args):
@@ -73,6 +79,10 @@ def evaluation(local_rank, args):
 
     # List[str]
     src_data = read_data(args.test_src_path)
+
+    tgt_prefix_data = None
+    if args.tgt_prefix_file_path is not None:
+        tgt_prefix_data = read_data(args.tgt_prefix_file_path)
 
     max_src_len = max(len(line.split()) for line in src_data) + 2
     max_tgt_len = max_src_len * 3
@@ -87,14 +97,14 @@ def evaluation(local_rank, args):
 
     src_data = convert_data_to_index(src_data, src_vocab)
 
-    dataset = DataPartition(src_data, args.world_size, args.work_load_per_process).dataset(rank)
+    dataset = DataPartition(src_data, args.world_size, tgt_prefix_data, args.work_load_per_process).dataset(rank)
 
     logging.info("dataset size: {}, rank: {}".format(len(dataset), rank))
 
     data_loader = DataLoader(dataset=dataset, batch_size=(args.batch_size if args.batch_size else 1),
                              shuffle=False, pin_memory=True, drop_last=False,
-                             collate_fn=lambda batch: pad_data(batch, padding_value,
-                                                               batch_first=(True if args.transformer else False)))
+                             collate_fn=lambda batch: collate_eval(batch, padding_value,
+                                                                   batch_first=(True if args.transformer else False)))
 
     if not os.path.isdir(args.translation_output_dir):
         os.makedirs(args.translation_output_dir)
@@ -124,12 +134,13 @@ def evaluation(local_rank, args):
 
         pred_data = []
 
-        for data in data_loader:
+        for data, tgt_prefix_batch in data_loader:
             if args.beam_size:
                 pred_data.append(beam_search_decoding(s2s, data.to(device, non_blocking=True), tgt_vocab,
                                                       args.beam_size, device))
             else:
-                pred_data.extend(greedy_decoding(s2s, data.to(device, non_blocking=True), tgt_vocab, device))
+                pred_data.extend(greedy_decoding(s2s, data.to(device, non_blocking=True), tgt_vocab, device,
+                                                 tgt_prefix_batch))
 
         if args.record_time:
             end_time = time.time()
@@ -138,9 +149,9 @@ def evaluation(local_rank, args):
         _, model_name = os.path.split(model_path)
 
         if args.beam_size:
-            translation_file_name_prefix = "{}_beam_size{}".format(model_name, args.beam_size)
+            translation_file_name_prefix = "{}_beam_size_{}".format(model_name, args.beam_size)
         else:
-            translation_file_name_prefix = model_name
+            translation_file_name_prefix = "{}_greedy".format(model_name)
 
         p = os.path.join(args.translation_output_dir, "{}_translations.rank{}".format(translation_file_name_prefix,
                                                                                       rank))
@@ -182,6 +193,7 @@ def main():
     parser.add_argument("--need_tok", action="store_true")
 
     parser.add_argument("--batch_size", type=int)
+    parser.add_argument("--tgt_prefix_file_path")
 
     parser.add_argument("--work_load_per_process", nargs="*", type=float)
 
