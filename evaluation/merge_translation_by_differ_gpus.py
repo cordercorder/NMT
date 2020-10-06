@@ -21,6 +21,9 @@ def main():
 
         if args.is_tok and not file_name_prefix.endswith("_tok"):
             continue
+        elif not args.is_tok and file_name_prefix.endswith("_tok"):
+            continue
+
         assert extension[1:5] == "rank"
         rank = int(extension[5:])
 

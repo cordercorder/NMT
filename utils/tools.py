@@ -2,9 +2,8 @@ import unicodedata
 import re
 import torch
 import logging
+import os
 
-from torch.utils.data import Dataset
-from typing import List
 import numpy as np
 import random
 
@@ -195,6 +194,10 @@ def load_transformer(model_path, src_vocab_size, max_src_len, tgt_vocab_size, ma
 
 
 def write_data(data, write_path):
+
+    directory, _ = os.path.split(write_path)
+    if not os.path.isdir(directory):
+        os.makedirs(directory)
 
     if data and isinstance(data[0], list):
         data = [" ".join(line) for line in data]
