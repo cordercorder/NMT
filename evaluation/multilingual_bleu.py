@@ -29,22 +29,21 @@ def cmp(item: str):
 
 def multilingual_bleu_calculation(args):
 
-    assert args.src_file_path is not None and args.language_data is not None
+    assert args.lang_identifier_file_path is not None and args.language_data is not None
 
     bleu_score_type = args.bleu_score_type
 
     corpus_bleu = nltk_corpus_bleu if bleu_score_type == "nltk_bleu" else sacre_corpus_bleu
 
-    src_file = read_data(args.src_file_path)
+    lang_identifier_list = read_data(args.lang_identifier_file_path)
     lang_identifier = {}
 
     with open(args.language_data) as f:
         language_dict = json.load(f)
 
-    for i, sentence in enumerate(src_file):
+    for i, sentence in enumerate(lang_identifier_list):
 
-        sentence = sentence.split()
-        lang_code = sentence[0]
+        lang_code = sentence
 
         assert lang_code.startswith("<") and lang_code.endswith(">")
 
@@ -149,7 +148,8 @@ def bilingual_bleu_calculation(args):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--src_file_path", help="The first token in sentences of src file is language identifier")
+    parser.add_argument("--lang_identifier_file_path",
+                        help="The first token in sentences of src file is language identifier")
     parser.add_argument("--translation_path_list", nargs="+")
     parser.add_argument("--reference_path", required=True)
     parser.add_argument("--language_data")
