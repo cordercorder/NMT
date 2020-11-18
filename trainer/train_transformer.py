@@ -7,7 +7,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 
 from utils.data_loader import load_corpus_data, NMTDataset, collate
-from utils.tools import sort_src_sentence_by_length, save_transformer, load_transformer, setup_seed
+from utils.tools import sort_src_sentence_by_length, save_transformer, load_transformer, setup_seed, get_optimizer
 from models import transformer
 from utils.Criterion import LabelSmoothingLoss
 
@@ -52,7 +52,7 @@ def train(args):
         logging.info("Load existing model from {}".format(args.load))
         s2s, optimizer_state_dict = load_transformer(args.load, len(src_vocab), max_src_len, len(tgt_vocab),
                                                      max_tgt_len, padding_value, training=True, device=device)
-        optimizer = torch.optim.Adam(s2s.parameters(), args.learning_rate)
+        optimizer = get_optimizer(s2s.parameters(), args.learning_rate, args.optim_method)
         optimizer.load_state_dict(optimizer_state_dict)
 
     else:
@@ -61,13 +61,13 @@ def train(args):
                                       args.d_ff, args.dropout, device)
 
         decoder = transformer.Decoder(len(tgt_vocab), max_tgt_len, args.d_model, args.num_layers, args.num_heads,
-                                      args.d_ff, args.dropout, device)
+                                      args.d_ff, args.dropout, args.share_dec_pro_emb, device)
 
         s2s = transformer.S2S(encoder, decoder, padding_value, device).to(device)
 
         s2s.init_parameters()
 
-        optimizer = torch.optim.Adam(s2s.parameters(), args.learning_rate)
+        optimizer = get_optimizer(s2s.parameters(), args.learning_rate, args.optim_method)
 
     s2s.train()
 
@@ -97,7 +97,7 @@ def train(args):
 
             batch_loss = s2s.train_batch(input_batch.to(device, non_blocking=True),
                                          target_batch.to(device, non_blocking=True),
-                                         criterion, optimizer)
+                                         criterion, optimizer, j, args.update_freq)
 
             epoch_loss += batch_loss
 
@@ -135,6 +135,8 @@ def main():
     parser.add_argument("--start_epoch", default=0, type=int)
     parser.add_argument("--end_epoch", default=10, type=int)
     parser.add_argument("--learning_rate", default=0.001, type=float)
+    parser.add_argument("--optim_method", choices=["fix_learning_rate", "adam_inverse_sqrt"],
+                        default="fix_learning_rate")
     parser.add_argument("--batch_size", default=32, type=int)
     parser.add_argument("--dropout", default=0, type=float)
     parser.add_argument("--start_token", default="<s>")
@@ -143,7 +145,11 @@ def main():
     parser.add_argument("--threshold", default=0, type=int)
     parser.add_argument("--mask_token", default="<mask>")
     parser.add_argument("--label_smoothing", default=0.1, type=float)
+    parser.add_argument("--share_dec_pro_emb", type=bool, default=True,
+                        help="share decoder input and project embedding")
+
     parser.add_argument("--seed", default=998244353, type=int)
+    parser.add_argument("--update_freq", default=1, type=int)
 
     parser.add_argument("--rebuild_vocab", action="store_true")
     parser.add_argument("--sort_sentence_by_length", action="store_true")

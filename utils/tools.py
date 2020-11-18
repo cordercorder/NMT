@@ -8,6 +8,7 @@ import numpy as np
 import random
 
 from models import S2S_attention, S2S_basic, transformer
+from utils.adam_inverse_sqrt_with_warmup import AdamInverseSqrtWithWarmup
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -191,6 +192,13 @@ def load_transformer(model_path, src_vocab_size, max_src_len, tgt_vocab_size, ma
         return s2s, optimizer_state_dict
 
     return s2s
+
+
+def get_optimizer(parameters, learning_rate, optim_method):
+    if optim_method == "fix_learning_rate":
+        return torch.optim.Adam(parameters, learning_rate)
+    else:
+        return AdamInverseSqrtWithWarmup(parameters, learning_rate)
 
 
 def write_data(data, write_path):

@@ -249,7 +249,7 @@ class DecoderLayer(nn.Module):
 
 class Decoder(nn.Module):
 
-    def __init__(self, tgt_vocab_size, max_tgt_len, d_model, num_layers, num_heads, d_ff, dropout, device):
+    def __init__(self, tgt_vocab_size, max_tgt_len, d_model, num_layers, num_heads, d_ff, dropout, share_dec_pro_emb, device):
         super(Decoder, self).__init__()
 
         self.device = device
@@ -261,6 +261,8 @@ class Decoder(nn.Module):
                                      for _ in range(num_layers)])
 
         self.linear = nn.Linear(d_model, tgt_vocab_size)
+        if share_dec_pro_emb:
+            self.linear.weight = self.token_embedding.weight
 
         self.dropout = nn.Dropout(p=dropout)
 
@@ -344,7 +346,12 @@ class S2S(nn.Module):
 
         return sum(p.numel() for p in self.parameters())
 
-    def train_batch(self, input_batch, target_batch, criterion, optimizer):
+    def train_batch(self, input_batch, target_batch, criterion, optimizer, steps, update_freq):
+
+        if update_freq == 1:
+            need_update = True
+        else:
+            need_update = True if (steps + 1) % update_freq == 0 else False
 
         """training api used only for single GPU"""
 
@@ -365,9 +372,10 @@ class S2S(nn.Module):
         del output
         del target_batch
 
-        optimizer.zero_grad()
-
         batch_loss.backward()
-        optimizer.step()
+
+        if need_update:
+            optimizer.step()
+            optimizer.zero_grad()
 
         return batch_loss.item()

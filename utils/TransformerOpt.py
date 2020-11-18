@@ -5,7 +5,7 @@ class TransformerOpt(optim.Adam):
 
     def __init__(self, params, init_lr):
 
-        super().__init__(params, lr=init_lr)
+        super(TransformerOpt, self).__init__(params, lr=init_lr)
         self.lr = init_lr
         self.step_num = 0
 

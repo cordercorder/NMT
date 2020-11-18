@@ -6,15 +6,16 @@ python -m trainer.multi_gpu_train_transformer \
     --d_model 512 \
     --num_heads 8 \
     --d_ff 2048 \
-    --src_language en \
-    --tgt_language combine \
-    --src_path /data/rrjin/NMT/data/ted_data/sub_corpus_both_with_lang_code/data/train_data_joint_bpe_32000_max_len_100_shuffled.en \
-    --tgt_path /data/rrjin/NMT/data/ted_data/sub_corpus_both_with_lang_code/data/train_data_joint_bpe_32000_max_len_100_shuffled.combine \
-    --src_vocab_path /data/rrjin/NMT/data/ted_data/sub_corpus_both_with_lang_code/vocab_data/transformer_label_smoothing/src_32000_transformer.en.vocab \
-    --tgt_vocab_path /data/rrjin/NMT/data/ted_data/sub_corpus_both_with_lang_code/vocab_data/transformer_label_smoothing/tgt_32000_transformer.combine.vocab \
-    --checkpoint /data/rrjin/NMT/data/ted_data/sub_corpus_both_with_lang_code/models/transformer_label_smoothing/transformer \
+    --src_language fa \
+    --tgt_language zh \
+    --src_path /data/cordercorder/NMT/data/corpus/clean.tok.pe_max_len_80.32000 \
+    --tgt_path /data/cordercorder/NMT/data/corpus/clean.tok.zh_max_len_80.32000 \
+    --src_vocab_path /data/cordercorder/NMT/data/corpus/pe.32000.vocab \
+    --tgt_vocab_path /data/cordercorder/NMT/data/corpus/zh.32000.vocab \
+    --checkpoint /data/cordercorder/NMT/data/model_checkpoint/transformer \
     --dropout 0.1 \
-    --learning_rate 0.00005 \
-    --end_epoch 15 \
+    --learning_rate 0.0005 \
+    --optim_method adam_inverse_sqrt \
+    --end_epoch 20 \
     --batch_size 64 \
     --rebuild_vocab

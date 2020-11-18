@@ -10,9 +10,8 @@ import torch.distributed as dist
 from torch.utils.data import DataLoader
 
 from utils.data_loader import load_corpus_data, NMTDataset, collate
-from utils.tools import sort_src_sentence_by_length, save_transformer, load_transformer, setup_seed
+from utils.tools import sort_src_sentence_by_length, save_transformer, load_transformer, setup_seed, get_optimizer
 from models import transformer
-from utils.TransformerOpt import TransformerOpt
 from utils.Criterion import LabelSmoothingLoss
 
 logging.basicConfig(level=logging.DEBUG)
@@ -71,7 +70,7 @@ def train(local_rank, args):
 
         s2s = nn.parallel.DistributedDataParallel(s2s, device_ids=[local_rank])
 
-        optimizer = torch.optim.Adam(s2s.parameters(), args.learning_rate)
+        optimizer = get_optimizer(s2s.parameters(), args.learning_rate, args.optim_method)
         optimizer.load_state_dict(optimizer_state_dict)
 
     else:
@@ -80,7 +79,7 @@ def train(local_rank, args):
                                       args.d_ff, args.dropout, device)
 
         decoder = transformer.Decoder(len(tgt_vocab), max_tgt_len, args.d_model, args.num_layers, args.num_heads,
-                                      args.d_ff, args.dropout, device)
+                                      args.d_ff, args.dropout, args.share_dec_pro_emb, device)
 
         s2s = transformer.S2S(encoder, decoder, padding_value, device).to(device)
 
@@ -88,8 +87,7 @@ def train(local_rank, args):
 
         s2s = nn.parallel.DistributedDataParallel(s2s, device_ids=[local_rank])
 
-        optimizer = torch.optim.Adam(s2s.parameters(), args.learning_rate)
-        # optimizer = TransformerOpt(s2s.parameters(), args.learning_rate)
+        optimizer = get_optimizer(s2s.parameters(), args.learning_rate, args.optim_method)
 
     s2s.train()
 
@@ -135,10 +133,10 @@ def train(local_rank, args):
 
             optimizer.zero_grad()
 
+            batch_loss.backward()
+
             # synchronize all processes
             dist.barrier()
-
-            batch_loss.backward()
 
             optimizer.step()
 
@@ -189,6 +187,7 @@ def main():
     parser.add_argument("--start_epoch", default=0, type=int)
     parser.add_argument("--end_epoch", default=10, type=int)
     parser.add_argument("--learning_rate", default=0.001, type=float)
+    parser.add_argument("--optim_method", choices=["fix_learning_rate", "adam_inverse_sqrt"], default="fix_learning_rate")
     parser.add_argument("--batch_size", default=32, type=int)
     parser.add_argument("--dropout", default=0, type=float)
     parser.add_argument("--start_token", default="<s>")
@@ -197,7 +196,10 @@ def main():
     parser.add_argument("--threshold", default=0, type=int)
     parser.add_argument("--mask_token", default="<mask>")
     parser.add_argument("--label_smoothing", default=0.1, type=int)
+    parser.add_argument("--share_dec_pro_emb", type=bool, default=True, help="share decoder input and project embedding")
+
     parser.add_argument("--seed", default=998244353, type=int)
+    parser.add_argument("--update_freq", default=1, type=int)
 
     parser.add_argument("--rebuild_vocab", action="store_true")
     parser.add_argument("--sort_sentence_by_length", action="store_true")

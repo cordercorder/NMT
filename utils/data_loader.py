@@ -32,9 +32,9 @@ def load_corpus_data(data_path, language_name, start_token, end_token, mask_toke
         data = f.read().strip().split("\n")
 
         for line in data:
-
+            line = line.strip()
             line = " ".join([start_token, line, end_token])
-
+            
             if rebuild_vocab:
                 v.add_sentence(line)
 
