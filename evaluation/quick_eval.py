@@ -6,7 +6,8 @@ import torch
 from torch.utils.data import DataLoader
 from subprocess import call
 
-from utils.tools import read_data, load_model, load_transformer, write_data, SrcData
+from utils.tools import read_data, load_model, load_transformer, write_data
+from utils.data_loader import SrcData
 from utils.Vocab import Vocab
 from evaluation.S2S_translation import greedy_decoding, beam_search_decoding
 from utils.data_loader import convert_data_to_index, pad_data
@@ -23,6 +24,7 @@ parser.add_argument("--test_src_path", required=True)
 parser.add_argument("--test_tgt_path", required=True)
 parser.add_argument("--src_vocab_path", required=True)
 parser.add_argument("--tgt_vocab_path", required=True)
+parser.add_argument("--share_dec_pro_emb", type=bool, default=True, help="share decoder input and project embedding")
 
 parser.add_argument("--translation_output_dir", required=True)
 parser.add_argument("--beam_size", type=int)
@@ -31,6 +33,8 @@ parser.add_argument("--record_time", action="store_true")
 parser.add_argument("--need_tok", action="store_true")
 
 parser.add_argument("--batch_size", type=int)
+
+parser.add_argument("--bleu_script_path", required=True)
 
 args, unknown = parser.parse_known_args()
 
@@ -76,7 +80,7 @@ for model_path in glob.glob(args.model_load):
     if args.transformer:
 
         s2s = load_transformer(model_path, len(src_vocab), max_src_len, len(tgt_vocab), max_tgt_len, padding_value,
-                               device=device)
+                               training=False, share_dec_pro_emb=args.share_dec_pro_emb,device=device)
 
     else:
         s2s = load_model(model_path, device=device)
@@ -122,11 +126,11 @@ for model_path in glob.glob(args.model_load):
 
         call(tok_command, shell=True)
 
-        bleu_calculation_command = "perl /data/rrjin/NMT/scripts/multi-bleu.perl {} < {}".format(args.test_tgt_path,
+        bleu_calculation_command = "perl {} {} < {}".format(args.test_tgt_path, args.bleu_script_path,
                                                                                                  p_tok)
 
     else:
-        bleu_calculation_command = "perl /data/rrjin/NMT/scripts/multi-bleu.perl {} < {}".format(args.test_tgt_path, p)
+        bleu_calculation_command = "perl {} {} < {}".format(args.test_tgt_path, args.bleu_script_path, p)
 
     call(bleu_calculation_command, shell=True)
 

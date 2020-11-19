@@ -172,7 +172,7 @@ def save_transformer(s2s_model, optimizer, args):
 
 
 def load_transformer(model_path, src_vocab_size, max_src_len, tgt_vocab_size, max_tgt_len, padding_value,
-                     training=False, device="cpu"):
+                     training=False, share_dec_pro_emb=True, device="cpu"):
 
     model_ckpt = torch.load(model_path, map_location="cpu")
 
@@ -181,7 +181,7 @@ def load_transformer(model_path, src_vocab_size, max_src_len, tgt_vocab_size, ma
     encoder = transformer.Encoder(src_vocab_size, max_src_len, args.d_model, args.num_layers, args.num_heads,
                                   args.d_ff, args.dropout, device)
     decoder = transformer.Decoder(tgt_vocab_size, max_tgt_len, args.d_model, args.num_layers, args.num_heads,
-                                  args.d_ff, args.dropout, device)
+                                  args.d_ff, args.dropout, share_dec_pro_emb, device)
 
     s2s = transformer.S2S(encoder, decoder, padding_value, device).to(device)
 

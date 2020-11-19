@@ -121,7 +121,7 @@ def evaluation(local_rank, args):
         if args.transformer:
 
             s2s = load_transformer(model_path, len(src_vocab), max_src_len, len(tgt_vocab), max_tgt_len, padding_value,
-                                   device=device)
+                                   training=False, share_dec_pro_emb=args.share_dec_pro_emb,device=device)
 
         else:
             s2s = load_model(model_path, device=device)
@@ -185,6 +185,8 @@ def main():
     parser.add_argument("--test_src_path", required=True)
     parser.add_argument("--src_vocab_path", required=True)
     parser.add_argument("--tgt_vocab_path", required=True)
+    parser.add_argument("--share_dec_pro_emb", type=bool, default=True,
+                        help="share decoder input and project embedding")
 
     parser.add_argument("--translation_output_dir", required=True)
     parser.add_argument("--beam_size", type=int)

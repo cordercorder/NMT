@@ -9,7 +9,6 @@ from utils.Vocab import Vocab
 class NMTDataset(Dataset):
 
     def __init__(self, src_data, tgt_data):
-
         self.data = list(zip(src_data, tgt_data))
 
     def __getitem__(self, item):
@@ -21,7 +20,6 @@ class NMTDataset(Dataset):
 
 def load_corpus_data(data_path, language_name, start_token, end_token, mask_token, vocab_path, rebuild_vocab,
                      unk="UNK", threshold=0):
-
     if rebuild_vocab:
         v = Vocab(language_name, start_token, end_token, mask_token, threshold=threshold)
 
@@ -34,7 +32,7 @@ def load_corpus_data(data_path, language_name, start_token, end_token, mask_toke
         for line in data:
             line = line.strip()
             line = " ".join([start_token, line, end_token])
-            
+
             if rebuild_vocab:
                 v.add_sentence(line)
 
@@ -49,14 +47,12 @@ def load_corpus_data(data_path, language_name, start_token, end_token, mask_toke
         v = Vocab.load(vocab_path)
 
     for line in corpus:
-
         data2index.append([v.get_index(token) for token in line.split()])
 
     return data2index, v
 
 
 def convert_data_to_index(data: List[str], vocab: Vocab):
-
     data2index = []
 
     for sentence in data:
@@ -67,7 +63,6 @@ def convert_data_to_index(data: List[str], vocab: Vocab):
 
 
 def pad_data(data, padding_value, batch_first):
-
     data_tensor = []
 
     max_length = max(len(line) for line in data)
@@ -85,7 +80,6 @@ def pad_data(data, padding_value, batch_first):
 
 
 def collate(batch, padding_value, batch_first=False):
-
     src_batch, tgt_batch = zip(*batch)
     src_batch_tensor = pad_data(src_batch, padding_value, batch_first)
     tgt_batch_tensor = pad_data(tgt_batch, padding_value, batch_first)
@@ -94,7 +88,6 @@ def collate(batch, padding_value, batch_first=False):
 
 
 def collate_eval(batch, padding_value, batch_first):
-
     if isinstance(batch[0], tuple):
         src_batch, tgt_prefix_batch = zip(*batch)
     else:
@@ -119,7 +112,7 @@ class ParallelSentenceBatch:
 
 class SrcData(Dataset):
 
-    def __init__(self, data: List[List[int]], tgt_prefix_data: List[str]):
+    def __init__(self, data: List[List[int]], tgt_prefix_data: List[str] = None):
         self.data = data
         self.tgt_prefix_data = tgt_prefix_data
 

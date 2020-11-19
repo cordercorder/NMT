@@ -1,14 +1,16 @@
 cd ..
 
 python -u -m evaluation.quick_eval \
-    --device cuda:1 \
-    --model_load /data/rrjin/NMT/data/ted_data/models/transformer/transformer_rank0 \
+    --device cuda:3 \
+    --model_load /data/cordercorder/NMT/data/model_checkpoint/transformer \
+    --is_prefix \
     --transformer \
-    --test_src_path /data/rrjin/NMT/data/ted_data/corpus/raw_test_data_src_tok_joint_bpe_32000.combine \
-    --test_tgt_path /data/rrjin/NMT/data/ted_data/corpus/raw_test_data_tgt_tok.en \
-    --src_vocab_path /data/rrjin/NMT/data/ted_data/vocab_data/transformer/src_32000_transformer.combine.vocab \
-    --tgt_vocab_path /data/rrjin/NMT/data/ted_data/vocab_data/transformer/tgt_32000_transformer.en.vocab \
-    --translation_output_dir /data/rrjin/NMT/data/ted_data/translation/transformer_test \
+    --test_src_path /data/cordercorder/NMT/data/corpus/test.pe.32000 \
+    --test_tgt_path /data/cordercorder/NMT/data/corpus/test.tok.zh \
+    --src_vocab_path /data/cordercorder/NMT/data/corpus/pe.32000.vocab \
+    --tgt_vocab_path /data/cordercorder/NMT/data/corpus/zh.32000.vocab \
+    --translation_output_dir /data/cordercorder/NMT/data/model_translation/transformer_base \
     --record_time \
     --need_tok \
-    --beam_size 5
+    --beam_size 5 \
+    --bleu_script_path /data/cordercorder/NMT/scripts/multi-bleu.perl
