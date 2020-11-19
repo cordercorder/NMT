@@ -103,6 +103,10 @@ def train(args):
 
             steps += 1
 
+        if (steps + 1) % args.update_freq != 0:
+            optimizer.step()
+            optimizer.zero_grad()
+
         epoch_loss /= steps
 
         epoch_ppl = math.exp(epoch_loss)

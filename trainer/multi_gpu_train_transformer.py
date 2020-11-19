@@ -119,6 +119,11 @@ def train(local_rank, args):
 
         for j, (input_batch, target_batch) in enumerate(train_loader):
 
+            if args.update_freq == 1:
+                need_update = True
+            else:
+                need_update = True if (j + 1) % args.update_freq == 0 else False
+
             input_batch = input_batch.to(device, non_blocking=True)
             target_batch = target_batch.to(device, non_blocking=True)
 
@@ -131,20 +136,26 @@ def train(local_rank, args):
             del target_batch
             del output
 
-            optimizer.zero_grad()
-
+            # synchronize all processes
+            # Gradient synchronization communications take place during the backward pass and overlap
+            # with the backward computation. When the backward() returns, param.grad already contains
+            # the synchronized gradient tensor.
+            dist.barrier()
             batch_loss.backward()
 
-            # synchronize all processes
-            dist.barrier()
-
-            optimizer.step()
+            if need_update:
+                optimizer.step()
+                optimizer.zero_grad()
 
             batch_loss = batch_loss.item()
 
             epoch_loss += batch_loss
 
             steps += 1
+
+        if (steps + 1) % args.update_freq != 0:
+            optimizer.step()
+            optimizer.zero_grad()
 
         epoch_loss /= steps
 

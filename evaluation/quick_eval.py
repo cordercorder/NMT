@@ -126,11 +126,11 @@ for model_path in glob.glob(args.model_load):
 
         call(tok_command, shell=True)
 
-        bleu_calculation_command = "perl {} {} < {}".format(args.test_tgt_path, args.bleu_script_path,
+        bleu_calculation_command = "perl {} {} < {}".format(args.bleu_script_path, args.test_tgt_path,
                                                                                                  p_tok)
 
     else:
-        bleu_calculation_command = "perl {} {} < {}".format(args.test_tgt_path, args.bleu_script_path, p)
+        bleu_calculation_command = "perl {} {} < {}".format(args.bleu_script_path, args.test_tgt_path, p)
 
     call(bleu_calculation_command, shell=True)
 
