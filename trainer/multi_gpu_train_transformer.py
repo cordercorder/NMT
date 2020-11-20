@@ -70,7 +70,7 @@ def train(local_rank, args):
 
         s2s = nn.parallel.DistributedDataParallel(s2s, device_ids=[local_rank])
 
-        optimizer = get_optimizer(s2s.parameters(), args.learning_rate, args.optim_method)
+        optimizer = get_optimizer(s2s.parameters(), args)
         optimizer.load_state_dict(optimizer_state_dict)
 
     else:
@@ -87,7 +87,7 @@ def train(local_rank, args):
 
         s2s = nn.parallel.DistributedDataParallel(s2s, device_ids=[local_rank])
 
-        optimizer = get_optimizer(s2s.parameters(), args.learning_rate, args.optim_method)
+        optimizer = get_optimizer(s2s.parameters(), args)
 
     s2s.train()
 
@@ -197,8 +197,17 @@ def main():
 
     parser.add_argument("--start_epoch", default=0, type=int)
     parser.add_argument("--end_epoch", default=10, type=int)
+
     parser.add_argument("--learning_rate", default=0.001, type=float)
-    parser.add_argument("--optim_method", choices=["fix_learning_rate", "adam_inverse_sqrt"], default="fix_learning_rate")
+    parser.add_argument("--optim_method", choices=["fix_learning_rate", "adam_inverse_sqrt"],
+                        default="fix_learning_rate")
+    parser.add_argument("--beta1", default=0.9, type=float)
+    parser.add_argument("--beta2", default=0.999, type=float)
+    parser.add_argument("--eps", default=1e-8, type=float)
+    parser.add_argument("--weight_decay", default=0.0, type=float)
+    parser.add_argument("--warmup_updates", default=4000, type=int)
+    parser.add_argument("--warmup_init_lr", default=1e-7, type=float)
+
     parser.add_argument("--batch_size", default=32, type=int)
     parser.add_argument("--dropout", default=0, type=float)
     parser.add_argument("--start_token", default="<s>")

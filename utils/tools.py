@@ -194,11 +194,26 @@ def load_transformer(model_path, src_vocab_size, max_src_len, tgt_vocab_size, ma
     return s2s
 
 
-def get_optimizer(parameters, learning_rate, optim_method):
-    if optim_method == "fix_learning_rate":
-        return torch.optim.Adam(parameters, learning_rate)
+def get_optimizer(parameters, args):
+
+    if args.optim_method == "fix_learning_rate":
+        opt_params = {
+            "lr": args.learning_rate,
+            "betas": (args.beta1, args.beta2),
+            "eps": args.eps,
+            "weight_decay": args.weight_decay
+        }
+        return torch.optim.Adam(parameters, **opt_params)
     else:
-        return AdamInverseSqrtWithWarmup(parameters, learning_rate)
+        opt_params = {
+            "lr": args.learning_rate,
+            "betas": (args.beta1, args.beta2),
+            "eps": args.eps,
+            "weight_decay": args.weight_decay,
+            "warmup_updates": args.warmup_updates,
+            "warmup_init_lr": args.warmup_init_lr
+        }
+        return AdamInverseSqrtWithWarmup(parameters, **opt_params)
 
 
 def write_data(data, write_path):

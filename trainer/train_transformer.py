@@ -4,6 +4,8 @@ import time
 import math
 import torch
 import torch.nn as nn
+import os
+
 from torch.utils.data import DataLoader
 
 from utils.data_loader import load_corpus_data, NMTDataset, collate
@@ -17,6 +19,11 @@ logging.basicConfig(level=logging.DEBUG)
 def train(args):
 
     setup_seed(args.seed)
+
+    saved_model_dir, _ = os.path.split(args.checkpoint)
+
+    if not os.path.isdir(saved_model_dir):
+        os.makedirs(saved_model_dir)
 
     device = args.device
 
@@ -52,7 +59,7 @@ def train(args):
         logging.info("Load existing model from {}".format(args.load))
         s2s, optimizer_state_dict = load_transformer(args.load, len(src_vocab), max_src_len, len(tgt_vocab),
                                                      max_tgt_len, padding_value, training=True, device=device)
-        optimizer = get_optimizer(s2s.parameters(), args.learning_rate, args.optim_method)
+        optimizer = get_optimizer(s2s.parameters(), args)
         optimizer.load_state_dict(optimizer_state_dict)
 
     else:
@@ -67,7 +74,7 @@ def train(args):
 
         s2s.init_parameters()
 
-        optimizer = get_optimizer(s2s.parameters(), args.learning_rate, args.optim_method)
+        optimizer = get_optimizer(s2s.parameters(), args)
 
     s2s.train()
 
@@ -138,9 +145,17 @@ def main():
 
     parser.add_argument("--start_epoch", default=0, type=int)
     parser.add_argument("--end_epoch", default=10, type=int)
+
     parser.add_argument("--learning_rate", default=0.001, type=float)
     parser.add_argument("--optim_method", choices=["fix_learning_rate", "adam_inverse_sqrt"],
                         default="fix_learning_rate")
+    parser.add_argument("--beta1", default=0.9, type=float)
+    parser.add_argument("--beta2", default=0.999, type=float)
+    parser.add_argument("--eps", default=1e-8, type=float)
+    parser.add_argument("--weight_decay", default=0.0, type=float)
+    parser.add_argument("--warmup_updates", default=4000, type=int)
+    parser.add_argument("--warmup_init_lr", default=1e-7, type=float)
+
     parser.add_argument("--batch_size", default=32, type=int)
     parser.add_argument("--dropout", default=0, type=float)
     parser.add_argument("--start_token", default="<s>")
