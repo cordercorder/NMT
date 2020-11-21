@@ -171,20 +171,21 @@ def save_transformer(s2s_model, optimizer, args):
     }
 
 
-def load_transformer(model_path, src_vocab_size, max_src_len, tgt_vocab_size, max_tgt_len, padding_value,
-                     training=False, share_dec_pro_emb=True, device="cpu"):
+def build_transformer(args, device):
 
-    model_ckpt = torch.load(model_path, map_location="cpu")
+    encoder = transformer.Encoder(args.src_vocab_size, args.max_src_len, args.d_model, args.num_layers, args.num_heads,
+                                  args.d_ff, args.encoder_max_rpe, args.dropout, device)
+    decoder = transformer.Decoder(args.tgt_vocab_size, args.max_tgt_len, args.d_model, args.num_layers, args.num_heads,
+                                  args.d_ff, args.share_dec_pro_emb, args.decoder_max_rpe, args.dropout, device)
+    s2s = transformer.S2S(encoder, decoder, args.padding_value, device).to(device)
+    return s2s
 
+
+def load_transformer(args, training=False, device="cpu"):
+
+    model_ckpt = torch.load(args.load, map_location="cpu")
     args = model_ckpt["args"]
-
-    encoder = transformer.Encoder(src_vocab_size, max_src_len, args.d_model, args.num_layers, args.num_heads,
-                                  args.d_ff, args.dropout, device)
-    decoder = transformer.Decoder(tgt_vocab_size, max_tgt_len, args.d_model, args.num_layers, args.num_heads,
-                                  args.d_ff, args.dropout, share_dec_pro_emb, device)
-
-    s2s = transformer.S2S(encoder, decoder, padding_value, device).to(device)
-
+    s2s = build_transformer(args, device)
     s2s.load_state_dict(model_ckpt["model_dict"])
 
     if training:

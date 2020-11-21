@@ -1,115 +1,22 @@
 import torch
 import torch.nn as nn
-import math
 
-
-class MultiHeadAttentionLayer(nn.Module):
-
-    def __init__(self, d_model, num_heads, dropout, device):
-        super(MultiHeadAttentionLayer, self).__init__()
-
-        assert d_model % num_heads == 0
-
-        self.d_model = d_model
-        self.num_heads = num_heads
-        self.d_k = d_model // num_heads
-        self.d_v = self.d_k
-
-        self.WQ = nn.Linear(d_model, d_model)
-        self.WK = nn.Linear(d_model, d_model)
-        self.WV = nn.Linear(d_model, d_model)
-        self.WO = nn.Linear(d_model, d_model)
-
-        self.dropout = nn.Dropout(p=dropout)
-
-        self.scale = torch.sqrt(torch.tensor([self.d_k], dtype=torch.float, device=device))
-
-    def forward(self, query, key, value, mask=None):
-        # query: (batch_size, input_length1, d_model)
-        # key: (batch_size, input_length2, d_model)
-        # value: (batch_size, input_length2, d_model)
-        # mask: src, src, src, src_mask (batch_size, 1, 1, input_length1)
-        # mask: tgt, tgt, tgt, tgt_mask (batch_size, 1, input_length1, input_length1)
-        # mask: tgt, encoder_src, encoder_src, src_mask (batch_size, 1, input_length1, input_length1)
-
-        batch_size = query.size(0)
-
-        Q = self.WQ(query)
-        K = self.WK(key)
-        V = self.WV(value)
-
-        del query
-        del key
-        del value
-
-        # Q: (batch_size, num_heads, input_length1, d_k)
-        # K: (batch_size, num_heads, input_length2, d_k)
-        # V: (batch_size, num_heads, input_length2, d_v)
-        Q = Q.view(batch_size, -1, self.num_heads, self.d_k).transpose(1, 2)
-        K = K.view(batch_size, -1, self.num_heads, self.d_k).transpose(1, 2)
-        V = V.view(batch_size, -1, self.num_heads, self.d_v).transpose(1, 2)
-
-        # attention: (batch_size, num_heads, input_length1, input_length2)
-        attention = torch.matmul(Q, K.transpose(2, 3)) / self.scale
-
-        if mask is not None:
-            attention = attention.masked_fill(mask == False, -1e12)
-
-        del mask
-
-        # attention: (batch_size, num_heads, input_length1, input_length2)
-        attention = torch.softmax(attention, dim=-1)
-
-        # x: (batch_size, num_heads, input_length1, d_k)
-        x = torch.matmul(self.dropout(attention), V)
-
-        # for memory reduction, do not return attention weight during training
-        if self.training:
-            del attention
-
-        # x: (batch_size, input_length1, d_model)
-        x = x.transpose(1, 2).contiguous().view(batch_size, -1, self.d_model)
-
-        # x: (batch_size, input_length1, d_model)
-        x = self.WO(x)
-
-        if self.training:
-            return x,
-        else:
-            return x, attention
-
-
-class PositionwiseFeedforwardLayer(nn.Module):
-
-    def __init__(self, d_model, d_ff, dropout):
-        super(PositionwiseFeedforwardLayer, self).__init__()
-
-        self.W1 = nn.Linear(d_model, d_ff)
-        self.W2 = nn.Linear(d_ff, d_model)
-
-        self.dropout = nn.Dropout(p=dropout)
-
-    def forward(self, x):
-        # x: (batch_size, input_length, d_model)
-
-        # x: (batch_size, input_length, d_ff)
-        x = self.dropout(torch.relu(self.W1(x)))
-
-        # x: (batch_size, input_length, d_model)
-        x = self.W2(x)
-
-        return x
+from models.MultiHeadAttention import MultiHeadAttentionLayer
+from models.PositionalEncoding import PositionalEncodingLayer
+from models.PositionwiseFeedforward import PositionwiseFeedforwardLayer
+from models.MultiHeadAttention import MultiHeadAttentionLayerRPE
 
 
 class EncoderLayer(nn.Module):
 
-    def __init__(self, d_model, num_heads, d_ff, dropout, device):
+    def __init__(self, d_model, num_heads, d_ff, encoder_max_rpe, max_src_len, dropout, device):
         super(EncoderLayer, self).__init__()
 
         self.self_attention_layer_norm = nn.LayerNorm(d_model)
         self.feed_forward_layer_norm = nn.LayerNorm(d_model)
 
-        self.self_attention_layer = MultiHeadAttentionLayer(d_model, num_heads, dropout, device)
+        self.self_attention_layer = MultiHeadAttentionLayerRPE(d_model, num_heads, encoder_max_rpe, max_src_len,
+                                                               dropout, device)
         self.feed_forward_layer = PositionwiseFeedforwardLayer(d_model, d_ff, dropout)
 
         self.dropout = nn.Dropout(p=dropout)
@@ -139,42 +46,23 @@ class EncoderLayer(nn.Module):
         return src
 
 
-class PositionalEncoding:
-
-    def __init__(self, d_model, max_len, device):
-        # pe: (max_len, d_model)
-        self.pe = torch.zeros(max_len, d_model, device=device)
-
-        # position: (max_len, 1)
-        position = torch.arange(0.0, max_len, device=device).unsqueeze(1)
-
-        # div_term: (d_model // 2)
-        div_term = torch.exp(torch.arange(0.0, d_model, 2, device=device) * -(math.log(10000.0) / d_model))
-
-        self.pe[:, 0::2] = torch.sin(position * div_term)
-        self.pe[:, 1::2] = torch.cos(position * div_term)
-
-        # pe: (1, max_len, d_model)
-        self.pe = self.pe.unsqueeze(0)
-
-    def __call__(self, x):
-        # x: (batch_size, input_length, d_model)
-
-        x = x + self.pe[:, :x.size(1)]
-        return x
-
-
 class Encoder(nn.Module):
 
-    def __init__(self, src_vocab_size, max_src_len, d_model, num_layers, num_heads, d_ff, dropout, device):
+    def __init__(self, src_vocab_size, max_src_len, d_model, num_layers, num_heads, d_ff, encoder_max_rpe,
+                 dropout, device):
         super(Encoder, self).__init__()
 
         self.device = device
 
-        self.pos_embedding = PositionalEncoding(d_model, max_src_len, device)
+        if encoder_max_rpe > 0:
+            self.pos_embedding = None
+        else:
+            self.pos_embedding = PositionalEncodingLayer(d_model, max_src_len, device)
+
         self.token_embedding = nn.Embedding(src_vocab_size, d_model)
 
-        self.layers = nn.ModuleList([EncoderLayer(d_model, num_heads, d_ff, dropout, device)
+        self.layers = nn.ModuleList([EncoderLayer(d_model, num_heads, d_ff, encoder_max_rpe, max_src_len,
+                                                  dropout, device)
                                      for _ in range(num_layers)])
 
         self.dropout = nn.Dropout(p=dropout)
@@ -188,7 +76,10 @@ class Encoder(nn.Module):
         # src: (batch_size, input_length, d_model)
         src = self.token_embedding(src) * self.scale
 
-        src = self.dropout(self.pos_embedding(src))
+        if self.pos_embedding:
+            src = self.pos_embedding(src)
+
+        src = self.dropout(src)
 
         for layer in self.layers:
             src = layer(src, src_mask)
@@ -198,15 +89,17 @@ class Encoder(nn.Module):
 
 class DecoderLayer(nn.Module):
 
-    def __init__(self, d_model, num_heads, d_ff, dropout, device):
+    def __init__(self, d_model, num_heads, d_ff, decoder_max_rpe, max_tgt_len, dropout, device):
         super(DecoderLayer, self).__init__()
 
         self.self_attention_layer_norm = nn.LayerNorm(d_model)
         self.encoder_attention_layer_norm = nn.LayerNorm(d_model)
         self.feed_forward_layer_norm = nn.LayerNorm(d_model)
 
-        self.self_attention_layer = MultiHeadAttentionLayer(d_model, num_heads, dropout, device)
-        self.encoder_attention_layer = MultiHeadAttentionLayer(d_model, num_heads, dropout, device)
+        self.self_attention_layer = MultiHeadAttentionLayerRPE(d_model, num_heads, decoder_max_rpe, max_tgt_len,
+                                                               dropout, device)
+        self.encoder_attention_layer = MultiHeadAttentionLayerRPE(d_model, num_heads, decoder_max_rpe, max_tgt_len,
+                                                                  dropout, device)
         self.feed_forward_layer = PositionwiseFeedforwardLayer(d_model, d_ff, dropout)
 
         self.dropout = nn.Dropout(p=dropout)
@@ -249,15 +142,21 @@ class DecoderLayer(nn.Module):
 
 class Decoder(nn.Module):
 
-    def __init__(self, tgt_vocab_size, max_tgt_len, d_model, num_layers, num_heads, d_ff, dropout, share_dec_pro_emb, device):
+    def __init__(self, tgt_vocab_size, max_tgt_len, d_model, num_layers, num_heads, d_ff, share_dec_pro_emb,
+                 decoder_max_rpe, dropout, device):
         super(Decoder, self).__init__()
 
         self.device = device
 
-        self.pos_embedding = PositionalEncoding(d_model, max_tgt_len, device)
+        if decoder_max_rpe > 0:
+            self.pos_embedding = None
+        else:
+            self.pos_embedding = PositionalEncodingLayer(d_model, max_tgt_len, device)
+
         self.token_embedding = nn.Embedding(tgt_vocab_size, d_model)
 
-        self.layers = nn.ModuleList([DecoderLayer(d_model, num_heads, d_ff, dropout, device)
+        self.layers = nn.ModuleList([DecoderLayer(d_model, num_heads, d_ff, decoder_max_rpe, max_tgt_len,
+                                                  dropout, device)
                                      for _ in range(num_layers)])
 
         self.linear = nn.Linear(d_model, tgt_vocab_size)
@@ -276,7 +175,10 @@ class Decoder(nn.Module):
 
         tgt = self.token_embedding(tgt) * self.scale
 
-        tgt = self.dropout(self.pos_embedding(tgt))
+        if self.pos_embedding:
+            tgt = self.pos_embedding(tgt)
+
+        tgt = self.dropout(tgt)
 
         for layer in self.layers:
             tgt = layer(tgt, encoder_src, tgt_mask, src_mask)

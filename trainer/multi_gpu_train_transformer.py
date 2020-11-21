@@ -10,8 +10,8 @@ import torch.distributed as dist
 from torch.utils.data import DataLoader
 
 from utils.data_loader import load_corpus_data, NMTDataset, collate
-from utils.tools import sort_src_sentence_by_length, save_transformer, load_transformer, setup_seed, get_optimizer
-from models import transformer
+from utils.tools import (sort_src_sentence_by_length, save_transformer, load_transformer,
+                         setup_seed, get_optimizer, build_transformer)
 from utils.Criterion import LabelSmoothingLoss
 
 logging.basicConfig(level=logging.DEBUG)
@@ -36,6 +36,9 @@ def train(local_rank, args):
                                            args.mask_token, args.tgt_vocab_path, args.rebuild_vocab, args.unk,
                                            args.threshold)
 
+    args.src_vocab_size = len(src_vocab)
+    args.tgt_vocab_size = len(tgt_vocab)
+
     logging.info("Source language vocab size: {}".format(len(src_vocab)))
     logging.info("Target language vocab size: {}".format(len(tgt_vocab)))
 
@@ -49,9 +52,13 @@ def train(local_rank, args):
     max_src_len = max(len(line) for line in src_data)
     max_tgt_len = max(len(line) for line in tgt_data)
 
+    args.max_src_len = max_src_len
+    args.max_tgt_len = max_tgt_len
+
     padding_value = src_vocab.get_index(args.mask_token)
 
     assert padding_value == tgt_vocab.get_index(args.mask_token)
+    args.padding_value = padding_value
 
     logging.info("Multi GPU training")
 
@@ -65,28 +72,16 @@ def train(local_rank, args):
     if args.load:
 
         logging.info("Load existing model from {}".format(args.load))
-        s2s, optimizer_state_dict = load_transformer(args.load, len(src_vocab), max_src_len, len(tgt_vocab),
-                                                     max_tgt_len, padding_value, training=True, device=device)
-
+        s2s, optimizer_state_dict = load_transformer(args, training=True, device=device)
         s2s = nn.parallel.DistributedDataParallel(s2s, device_ids=[local_rank])
-
         optimizer = get_optimizer(s2s.parameters(), args)
         optimizer.load_state_dict(optimizer_state_dict)
 
     else:
         logging.info("New model")
-        encoder = transformer.Encoder(len(src_vocab), max_src_len, args.d_model, args.num_layers, args.num_heads,
-                                      args.d_ff, args.dropout, device)
-
-        decoder = transformer.Decoder(len(tgt_vocab), max_tgt_len, args.d_model, args.num_layers, args.num_heads,
-                                      args.d_ff, args.dropout, args.share_dec_pro_emb, device)
-
-        s2s = transformer.S2S(encoder, decoder, padding_value, device).to(device)
-
+        s2s = build_transformer(args, device)
         s2s.init_parameters()
-
         s2s = nn.parallel.DistributedDataParallel(s2s, device_ids=[local_rank])
-
         optimizer = get_optimizer(s2s.parameters(), args)
 
     s2s.train()
@@ -184,6 +179,8 @@ def main():
     parser.add_argument("--d_model", required=True, type=int)
     parser.add_argument("--num_heads", required=True, type=int)
     parser.add_argument("--d_ff", required=True, type=int)
+    parser.add_argument("--encoder_max_rpe", default=0, type=int)
+    parser.add_argument("--decoder_max_rpe", default=0, type=int)
 
     parser.add_argument("--src_language", required=True)
     parser.add_argument("--tgt_language", required=True)
